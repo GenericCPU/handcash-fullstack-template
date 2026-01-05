@@ -17,9 +17,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface Item {
   id: string
-  origin: string
+  origin?: string
   name: string
-  imageUrl: string
+  imageUrl?: string
 }
 
 interface ItemTransferDialogProps {
@@ -27,9 +27,10 @@ interface ItemTransferDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  apiEndpoint?: string
 }
 
-export function ItemTransferDialog({ item, open, onOpenChange, onSuccess }: ItemTransferDialogProps) {
+export function ItemTransferDialog({ item, open, onOpenChange, onSuccess, apiEndpoint = "/api/items/transfer" }: ItemTransferDialogProps) {
   const [destination, setDestination] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,7 +45,7 @@ export function ItemTransferDialog({ item, open, onOpenChange, onSuccess }: Item
     setError(null)
 
     try {
-      const response = await fetch("/api/items/transfer", {
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

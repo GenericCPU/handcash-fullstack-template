@@ -99,7 +99,7 @@ export function FriendsList() {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="font-bold truncate text-base">{friend.displayName}</div>
-                <div className="text-sm text-muted-foreground truncate">@{friend.handle}</div>
+                <div className="text-sm text-muted-foreground truncate">${friend.handle}</div>
               </div>
               <div className="text-xs text-muted-foreground hidden sm:block font-mono">{friend.paymail}</div>
             </div>

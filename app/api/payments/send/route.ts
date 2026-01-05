@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { destination, amount, currency, description } = body
+    const { destination, amount, instrument, description } = body
 
     if (!destination || !amount) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -26,13 +26,13 @@ export async function POST(request: NextRequest) {
       sessionId: session.sessionId,
       ipAddress: request.ip || null,
       userAgent: request.headers.get("user-agent"),
-      details: { destination, amount, currency },
+      details: { destination, amount, instrument },
     })
 
     const data = await handcashService.sendPayment(privateKey, {
       destination,
       amount: Number.parseFloat(amount),
-      currency,
+      instrument,
       description,
     })
 

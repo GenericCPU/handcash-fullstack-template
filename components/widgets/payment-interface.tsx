@@ -10,8 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Send, Wallet, RefreshCw } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Balance {
   spendableBalances: {
@@ -47,7 +45,7 @@ export function PaymentInterface() {
   const [destination, setDestination] = useState("")
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
-  const [denominationCurrency, setDenominationCurrency] = useState("BSV")
+  const [instrument, setInstrument] = useState("BSV")
 
   const fetchBalance = async () => {
     setIsLoadingBalance(true)
@@ -93,7 +91,7 @@ export function PaymentInterface() {
         body: JSON.stringify({
           destination,
           amount,
-          currency: denominationCurrency,
+          instrument,
           description,
         }),
       })
@@ -120,49 +118,64 @@ export function PaymentInterface() {
   return (
     <div className="space-y-6">
       {/* Balance Card */}
-      <Card className="p-6 rounded-3xl border-border">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Wallet className="w-6 h-6 text-primary" />
-            <h3 className="text-xl font-bold">Wallet Balance</h3>
+      <Card className="p-4 rounded-3xl border-border">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-bold">Wallet Balance</h3>
           </div>
-          <Button variant="ghost" size="sm" onClick={fetchBalance} disabled={isLoadingBalance} className="rounded-full">
-            <RefreshCw className={`w-5 h-5 ${isLoadingBalance ? "animate-spin" : ""}`} />
+          <Button variant="ghost" size="sm" onClick={fetchBalance} disabled={isLoadingBalance} className="rounded-full h-8 w-8 p-0">
+            <RefreshCw className={`w-4 h-4 ${isLoadingBalance ? "animate-spin" : ""}`} />
           </Button>
         </div>
 
         {isLoadingBalance ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : balance ? (
-          <div className="space-y-6">
-            <div>
-              <h4 className="text-sm font-semibold text-muted-foreground mb-3">Spendable Balance</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {balance.spendableBalances?.items?.map((item) => (
-                  <div key={item.currencyCode} className="p-4 bg-muted rounded-2xl">
-                    <div className="text-xs text-muted-foreground mb-1 font-semibold">{item.currencyCode}</div>
-                    <div className="text-2xl font-bold">
-                      {item.spendableBalance.toFixed(item.currencyCode === "BSV" ? 8 : 2)}
-                    </div>
-                  </div>
-                ))}
+          <div className="space-y-4">
+            {balance.spendableBalances?.items && balance.spendableBalances.items.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Spendable Balance</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {balance.spendableBalances.items.map((item) => {
+                    const allBalanceItem = balance.allBalances?.items?.find((b) => b.currency.code === item.currencyCode)
+                    const usdValue =
+                      item.currencyCode === "BSV" && allBalanceItem?.fiatEquivalent && allBalanceItem.units > 0
+                        ? (item.spendableBalance / allBalanceItem.units) * allBalanceItem.fiatEquivalent.units
+                        : null
+
+                    return (
+                      <div key={item.currencyCode} className="p-3 bg-gradient-to-br from-muted to-muted/80 rounded-xl border border-border/50">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{item.currencyCode}</div>
+                        <div className={`font-bold tracking-tight break-all ${item.currencyCode === "BSV" ? "text-lg mb-1" : "text-xl mb-1"}`}>
+                          {item.spendableBalance.toFixed(item.currencyCode === "BSV" ? 8 : 2)}
+                        </div>
+                        {usdValue !== null && (
+                          <div className="text-xs text-muted-foreground font-medium">
+                            ≈ ${usdValue.toFixed(2)} {allBalanceItem?.fiatEquivalent?.currencyCode || "USD"}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {balance.allBalances?.items && balance.allBalances.items.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-3">Total Balance</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Total Balance</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {balance.allBalances.items.map((item) => (
-                    <div key={item.currency.code} className="p-4 bg-muted/50 rounded-2xl">
-                      <div className="text-xs text-muted-foreground mb-1 font-semibold">{item.currency.code}</div>
-                      <div className="text-2xl font-bold">
+                    <div key={item.currency.code} className="p-3 bg-gradient-to-br from-background to-muted/30 rounded-xl border border-border/50">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{item.currency.code}</div>
+                      <div className={`font-bold tracking-tight break-all mb-1 ${item.currency.code === "BSV" ? "text-lg" : "text-xl"}`}>
                         {item.units.toFixed(item.currency.code === "BSV" ? 8 : 2)}
                       </div>
-                      {item.fiatEquivalent && (
-                        <div className="text-xs text-muted-foreground mt-1">
+                      {item.currency.code === "BSV" && item.fiatEquivalent && (
+                        <div className="text-xs text-muted-foreground font-medium">
                           ≈ ${item.fiatEquivalent.units.toFixed(2)} {item.fiatEquivalent.currencyCode}
                         </div>
                       )}
@@ -173,7 +186,10 @@ export function PaymentInterface() {
             )}
           </div>
         ) : (
-          <p className="text-muted-foreground text-center py-8 text-lg">No balance data available</p>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground text-sm mb-1">No balance data available</p>
+            <p className="text-xs text-muted-foreground/70">Wallet balance will appear here</p>
+          </div>
         )}
       </Card>
 
@@ -201,35 +217,38 @@ export function PaymentInterface() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="currency" className="font-semibold">
-              Denomination Currency
+            <Label className="font-semibold">
+              Payment Instrument
             </Label>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Select value={denominationCurrency} onValueChange={setDenominationCurrency}>
-                  <SelectTrigger id="currency" className="rounded-2xl h-12">
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl">
-                    <SelectItem value="BSV">BSV</SelectItem>
-                    <SelectItem value="MNEE">MNEE</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
+            <div className="flex gap-3">
+              <button
                 type="button"
-                variant="outline"
-                onClick={() => setDenominationCurrency("USD")}
-                className={`rounded-2xl font-semibold ${denominationCurrency === "USD" ? "bg-muted" : ""}`}
+                onClick={() => setInstrument("BSV")}
+                className={`flex-1 h-12 rounded-xl border-2 font-semibold text-base transition-all ${
+                  instrument === "BSV"
+                    ? "bg-primary text-primary-foreground border-primary shadow-md"
+                    : "bg-background hover:bg-muted border-border hover:border-primary/50"
+                }`}
               >
-                USD (Default)
-              </Button>
+                BSV
+              </button>
+              <button
+                type="button"
+                onClick={() => setInstrument("MNEE")}
+                className={`flex-1 h-12 rounded-xl border-2 font-semibold text-base transition-all ${
+                  instrument === "MNEE"
+                    ? "bg-primary text-primary-foreground border-primary shadow-md"
+                    : "bg-background hover:bg-muted border-border hover:border-primary/50"
+                }`}
+              >
+                MNEE
+              </button>
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="amount" className="font-semibold">
-              Amount ({denominationCurrency})
+              Amount (USD)
             </Label>
             <Input
               id="amount"
@@ -285,20 +304,6 @@ export function PaymentInterface() {
           </Button>
         </form>
 
-        <div className="mt-6 p-4 bg-muted rounded-2xl">
-          <h4 className="text-sm font-bold mb-3">Supported Recipients</h4>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="rounded-full font-semibold">
-              Handcash Handles
-            </Badge>
-            <Badge variant="secondary" className="rounded-full font-semibold">
-              Paymail Addresses
-            </Badge>
-            <Badge variant="secondary" className="rounded-full font-semibold">
-              Bitcoin Addresses
-            </Badge>
-          </div>
-        </div>
       </Card>
     </div>
   )

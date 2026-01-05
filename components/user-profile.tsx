@@ -1,10 +1,11 @@
 "use client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, User } from "lucide-react"
+import { Loader2, User, Shield } from "lucide-react"
 import { LogoutButton } from "@/components/logout-button"
 import { LoginButton } from "@/components/login-button"
 import { useAuth } from "@/lib/auth-context"
+import { useEffect, useState } from "react"
 
 interface UserProfile {
   publicProfile: {
@@ -15,8 +16,32 @@ interface UserProfile {
   }
 }
 
-export function UserProfile() {
+interface UserProfileProps {
+  showAdminBadge?: boolean
+}
+
+export function UserProfile({ showAdminBadge = false }: UserProfileProps) {
   const { user, isLoading, error } = useAuth()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    if (showAdminBadge && user) {
+      const checkAdminStatus = async () => {
+        try {
+          const response = await fetch("/api/admin/status", {
+            credentials: "include",
+          })
+          if (response.ok) {
+            const data = await response.json()
+            setIsAdmin(data.isAdmin || false)
+          }
+        } catch (err) {
+          console.error("Failed to check admin status:", err)
+        }
+      }
+      checkAdminStatus()
+    }
+  }, [showAdminBadge, user])
 
   if (isLoading) {
     return (
@@ -60,13 +85,19 @@ export function UserProfile() {
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
             <h3 className="text-2xl font-bold truncate">{user.publicProfile.displayName}</h3>
             <Badge variant="secondary" className="shrink-0 rounded-full px-3 py-1">
               Connected
             </Badge>
+            {showAdminBadge && isAdmin && (
+              <Badge variant="default" className="shrink-0 rounded-full px-3 py-1 bg-primary">
+                <Shield className="w-3 h-3 mr-1" />
+                Admin
+              </Badge>
+            )}
           </div>
-          <p className="text-muted-foreground text-lg mb-1">@{user.publicProfile.handle}</p>
+          <p className="text-muted-foreground text-lg mb-1">${user.publicProfile.handle}</p>
           <p className="text-sm font-mono text-muted-foreground break-all">{user.publicProfile.paymail}</p>
         </div>
       </div>
