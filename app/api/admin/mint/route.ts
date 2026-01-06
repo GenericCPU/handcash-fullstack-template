@@ -1,8 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/admin-middleware"
 import { getMinter, resolveHandlesToUserIds } from "@/lib/items-client"
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting before auth check
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.mint)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   const adminResult = await requireAdmin(request)
 
   if (!adminResult.success) {

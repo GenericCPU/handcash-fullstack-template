@@ -1,11 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/admin-middleware"
 import { getPaymentsByPaymentRequestId } from "@/lib/payments-storage"
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.admin)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   const adminResult = await requireAdmin(request)
 
   if (!adminResult.success) {

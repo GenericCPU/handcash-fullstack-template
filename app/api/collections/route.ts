@@ -1,7 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCollections as getLocalCollections } from "@/lib/collections-storage"
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 
 export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.general)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
   try {
     // Get locally stored collections (public endpoint - no auth required)
     // This allows users to see collection names even if they're not in the API response

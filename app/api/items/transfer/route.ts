@@ -1,8 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { handcashService } from "@/lib/handcash-service"
 import { requireAuth } from "@/lib/auth-middleware"
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting before auth check
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.itemTransfer)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   const authResult = await requireAuth(request)
 
   if (!authResult.success) {

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "./auth-middleware"
 import { handcashService } from "./handcash-service"
+import { validateConfig } from "./config-validator"
 
 /**
  * Admin Authentication Middleware
@@ -12,6 +13,7 @@ export async function requireAdmin(request: NextRequest): Promise<
       success: true
       privateKey: string
       handle: string
+      session: import("./session-utils").SessionMetadata
     }
   | {
       success: false
@@ -25,7 +27,19 @@ export async function requireAdmin(request: NextRequest): Promise<
     return authResult
   }
 
-  const { privateKey } = authResult
+  const { privateKey, session } = authResult
+
+  // Validate configuration (first time only)
+  const configValidation = validateConfig()
+  if (!configValidation.valid && process.env.NODE_ENV === "production") {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: "Admin configuration error", details: configValidation.errors },
+        { status: 500 },
+      ),
+    }
+  }
 
   try {
     // Get user profile to check handle
@@ -55,6 +69,7 @@ export async function requireAdmin(request: NextRequest): Promise<
       success: true,
       privateKey,
       handle: userHandle,
+      session,
     }
   } catch (error) {
     console.error("[AdminMiddleware] Admin middleware error:", error)

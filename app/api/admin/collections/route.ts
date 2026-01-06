@@ -2,8 +2,14 @@ import { type NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/admin-middleware"
 import { getAccountClient, getMinter, Connect } from "@/lib/items-client"
 import { saveCollection, getCollections as getLocalCollections } from "@/lib/collections-storage"
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.admin)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   const adminResult = await requireAdmin(request)
 
   if (!adminResult.success) {
@@ -53,8 +59,13 @@ export async function GET(request: NextRequest) {
     let localCollections: unknown[] = []
     try {
       localCollections = await getLocalCollections()
+      // Ensure it's an array
+      if (!Array.isArray(localCollections)) {
+        localCollections = []
+      }
     } catch (localError) {
-      console.error("Error fetching local collections:", localError)
+      // If data directory doesn't exist or file read fails, return empty array
+      console.warn("[Collections] Error fetching local collections (assuming empty):", localError instanceof Error ? localError.message : String(localError))
       localCollections = []
     }
 
@@ -100,6 +111,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.admin)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   const adminResult = await requireAdmin(request)
 
   if (!adminResult.success) {

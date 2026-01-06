@@ -34,9 +34,20 @@ async function readTemplatesFile(): Promise<ItemTemplate[]> {
   try {
     await ensureDataDirectory()
     const fileContent = await fs.readFile(TEMPLATES_FILE_PATH, "utf-8")
-    return JSON.parse(fileContent)
+    if (!fileContent.trim()) {
+      return []
+    }
+    const parsed = JSON.parse(fileContent)
+    return Array.isArray(parsed) ? parsed : []
   } catch (error) {
-    // File doesn't exist yet, return empty array
+    // File doesn't exist, is invalid JSON, or directory doesn't exist - return empty array
+    const err = error as NodeJS.ErrnoException
+    if (err.code === "ENOENT") {
+      // File or directory doesn't exist - that's fine
+      return []
+    }
+    // Invalid JSON or other error - log but don't throw
+    console.warn("[ItemTemplatesStorage] Error reading templates file:", err.message)
     return []
   }
 }

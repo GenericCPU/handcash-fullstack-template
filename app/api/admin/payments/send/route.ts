@@ -2,8 +2,22 @@ import { type NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/admin-middleware"
 import { getBusinessClient, Connect } from "@/lib/items-client"
 import { logAuditEvent, AuditEventType } from "@/lib/audit-logger"
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
+import {
+  validateHandleOrId,
+  validatePositiveNumber,
+  validateOptionalString,
+  validateCurrencyCode,
+  validationErrorResponse,
+} from "@/lib/input-validation"
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting before auth check
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.admin)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   const adminResult = await requireAdmin(request)
 
   if (!adminResult.success) {
@@ -19,18 +33,34 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { destination, amount, instrument, description } = body
 
-    if (!destination || !amount) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    // Validate input
+    let destination: string
+    let amount: number
+    let instrument: string
+    let description: string | undefined
+
+    try {
+      destination = validateHandleOrId(body.destination, "destination")
+      amount = validatePositiveNumber(body.amount, "amount")
+      instrument = body.instrument ? validateCurrencyCode(body.instrument, "instrument") : "BSV"
+      description = validateOptionalString(body.description, "description")
+    } catch (validationError) {
+      const errorResponse = validationErrorResponse(validationError)
+      return NextResponse.json({ error: errorResponse.error, details: errorResponse.details }, { status: errorResponse.status })
     }
+
+    // Get IP from x-forwarded-for header or direct IP
+    const forwardedFor = request.headers.get("x-forwarded-for")
+    const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : null
+    const userAgent = request.headers.get("user-agent") || request.headers.get("x-forwarded-user-agent")
 
     logAuditEvent({
       type: AuditEventType.PAYMENT_INITIATED,
       success: true,
-      sessionId: session?.sessionId || "admin",
-      ipAddress: request.ip || null,
-      userAgent: request.headers.get("user-agent"),
+      sessionId: session?.sessionId || ipAddress || "unknown",
+      ipAddress,
+      userAgent,
       details: { destination, amount, instrument },
     })
 
@@ -45,7 +75,7 @@ export async function POST(request: NextRequest) {
         receivers: [
           {
             destination,
-            sendAmount: Number.parseFloat(amount),
+            sendAmount: amount,
           },
         ],
       },
@@ -56,9 +86,9 @@ export async function POST(request: NextRequest) {
     logAuditEvent({
       type: AuditEventType.PAYMENT_SUCCESS,
       success: true,
-      sessionId: session?.sessionId || "admin",
-      ipAddress: request.ip || null,
-      userAgent: request.headers.get("user-agent"),
+      sessionId: session?.sessionId || ipAddress || "unknown",
+      ipAddress,
+      userAgent,
       details: { destination, amount, transactionId: data.transactionId },
     })
 
@@ -66,12 +96,16 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("[v0] Business payment error:", error)
 
+    const forwardedFor = request.headers.get("x-forwarded-for")
+    const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : null
+    const userAgent = request.headers.get("user-agent") || request.headers.get("x-forwarded-user-agent")
+
     logAuditEvent({
       type: AuditEventType.PAYMENT_FAILED,
       success: false,
-      sessionId: session?.sessionId || "admin",
-      ipAddress: request.ip || null,
-      userAgent: request.headers.get("user-agent"),
+      sessionId: session?.sessionId || ipAddress || "unknown",
+      ipAddress,
+      userAgent,
       details: { error: String(error) },
     })
 

@@ -1,7 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getBusinessClient, Connect } from "@/lib/items-client"
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 
 export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.general)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
   try {
     const businessAuthToken = process.env.BUSINESS_AUTH_TOKEN
     if (!businessAuthToken) {

@@ -1,7 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { logAuditEvent, AuditEventType } from "@/lib/audit-logger"
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.auth)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
   const sessionData = request.cookies.get("session_metadata")?.value
   let sessionId: string | undefined
 
@@ -14,12 +20,16 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const forwardedFor = request.headers.get("x-forwarded-for")
+  const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : null
+  const userAgent = request.headers.get("user-agent") || request.headers.get("x-forwarded-user-agent")
+
   logAuditEvent({
     type: AuditEventType.LOGOUT,
     success: true,
     sessionId,
-    ipAddress: request.ip || null,
-    userAgent: request.headers.get("user-agent"),
+    ipAddress,
+    userAgent,
   })
 
   const response = NextResponse.json({ success: true })

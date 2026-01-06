@@ -1,10 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/admin-middleware"
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 
 const HANDCASH_API_URL = "https://cloud.handcash.io/v3"
 
 // POST - Create a new payment request
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.admin)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   const adminResult = await requireAdmin(request)
 
   if (!adminResult.success) {
@@ -112,6 +118,11 @@ export async function POST(request: NextRequest) {
 
 // GET - List payment requests
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.admin)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   const adminResult = await requireAdmin(request)
 
   if (!adminResult.success) {

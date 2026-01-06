@@ -7,7 +7,6 @@ import { randomBytes } from "crypto"
 
 export interface SessionMetadata {
   sessionId: string
-  privateKey: string
   createdAt: number
   lastActivity: number
   ipAddress: string | null
@@ -23,12 +22,13 @@ export function generateSessionId(): string {
 
 /**
  * Create a new session with metadata
+ * Note: privateKey is NOT stored in session metadata for security reasons.
+ * The private key is stored separately in the private_key cookie.
  */
-export function createSession(privateKey: string, ipAddress: string | null, userAgent: string | null): SessionMetadata {
+export function createSession(ipAddress: string | null, userAgent: string | null): SessionMetadata {
   const now = Date.now()
   return {
     sessionId: generateSessionId(),
-    privateKey,
     createdAt: now,
     lastActivity: now,
     ipAddress,
@@ -55,17 +55,36 @@ export function isSessionExpired(session: SessionMetadata, maxAgeMs = 30 * 24 * 
 
 /**
  * Validate session consistency (IP and User-Agent matching)
+ * In production, always validates even if IP/UA are null (behind proxies)
  */
 export function validateSessionConsistency(
   session: SessionMetadata,
   currentIp: string | null,
   currentUserAgent: string | null,
 ): boolean {
-  // Allow null values (e.g., in development)
-  if (!session.ipAddress || !session.userAgent) {
+  const isProduction = process.env.NODE_ENV === "production"
+
+  // In development, allow null values for convenience
+  if (!isProduction && (!session.ipAddress || !session.userAgent)) {
     return true
   }
 
   // In production, enforce strict matching
+  // If session IP/UA are null, only allow for very old sessions (migration grace period)
+  if (!session.ipAddress || !session.userAgent) {
+    // Migration date: 2024-12-19 (when this validation was enforced)
+    const migrationDate = new Date("2024-12-19").getTime()
+    const sessionAge = Date.now() - session.createdAt
+    
+    // Allow if session was created before migration (30 day grace period)
+    if (session.createdAt < migrationDate || sessionAge > 30 * 24 * 60 * 60 * 1000) {
+      // Very old session, allow for migration
+      return true
+    }
+    
+    // New session without IP/UA - require validation (deny)
+    return false
+  }
+
   return session.ipAddress === currentIp && session.userAgent === currentUserAgent
 }

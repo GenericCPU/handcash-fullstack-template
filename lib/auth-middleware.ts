@@ -5,6 +5,7 @@ import {
   isSessionExpired,
   validateSessionConsistency,
   updateSessionActivity,
+  generateSessionId,
 } from "./session-utils"
 import { logAuditEvent, AuditEventType } from "./audit-logger"
 
@@ -41,11 +42,15 @@ export async function requireAuth(request: NextRequest): Promise<
     }
 
     if (!privateKey) {
+      const forwardedFor = request.headers.get("x-forwarded-for")
+      const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : null
+      const userAgent = request.headers.get("user-agent") || request.headers.get("x-forwarded-user-agent")
+
       logAuditEvent({
         type: AuditEventType.PROFILE_ACCESS,
         success: false,
-        ipAddress: request.ip || null,
-        userAgent: request.headers.get("user-agent"),
+        ipAddress,
+        userAgent,
         details: { reason: "No auth token provided" },
       })
       return {
@@ -62,12 +67,16 @@ export async function requireAuth(request: NextRequest): Promise<
 
         // Validate session hasn't expired
         if (isSessionExpired(session)) {
+          const forwardedFor = request.headers.get("x-forwarded-for")
+          const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : null
+          const userAgent = request.headers.get("user-agent") || request.headers.get("x-forwarded-user-agent")
+
           logAuditEvent({
             type: AuditEventType.SESSION_EXPIRED,
             success: false,
             sessionId: session.sessionId,
-            ipAddress: request.ip || null,
-            userAgent: request.headers.get("user-agent"),
+            ipAddress,
+            userAgent,
           })
 
           const response = NextResponse.json({ error: "Session expired" }, { status: 401 })
@@ -77,8 +86,10 @@ export async function requireAuth(request: NextRequest): Promise<
         }
 
         // Validate session consistency (detect potential hijacking)
-        const currentIp = request.ip || null
-        const currentUserAgent = request.headers.get("user-agent")
+        // Get IP from x-forwarded-for header (for proxies/load balancers)
+        const forwardedFor = request.headers.get("x-forwarded-for")
+        const currentIp = forwardedFor ? forwardedFor.split(",")[0].trim() : null
+        const currentUserAgent = request.headers.get("user-agent") || request.headers.get("x-forwarded-user-agent")
 
         if (!validateSessionConsistency(session, currentIp, currentUserAgent)) {
           logAuditEvent({
@@ -110,12 +121,16 @@ export async function requireAuth(request: NextRequest): Promise<
     // Validate auth token with HandCash
     const isValid = await handcashService.validateAuthToken(privateKey)
     if (!isValid) {
+      const forwardedFor = request.headers.get("x-forwarded-for")
+      const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : null
+      const userAgent = request.headers.get("user-agent") || request.headers.get("x-forwarded-user-agent")
+
       logAuditEvent({
         type: AuditEventType.PROFILE_ACCESS,
         success: false,
         sessionId: session?.sessionId,
-        ipAddress: request.ip || null,
-        userAgent: request.headers.get("user-agent"),
+        ipAddress,
+        userAgent,
         details: { reason: "Invalid auth token" },
       })
 
@@ -126,14 +141,19 @@ export async function requireAuth(request: NextRequest): Promise<
     }
 
     // If no session exists, create a basic one (for backward compatibility)
+    // Note: privateKey is NOT stored in session metadata for security
     if (!session) {
+      const forwardedFor = request.headers.get("x-forwarded-for")
+      const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : null
+      const userAgent = request.headers.get("user-agent") || request.headers.get("x-forwarded-user-agent")
+      
+      // Generate unique session ID instead of "legacy"
       session = {
-        sessionId: "legacy",
-        privateKey,
+        sessionId: generateSessionId(),
         createdAt: Date.now(),
         lastActivity: Date.now(),
-        ipAddress: request.ip || null,
-        userAgent: request.headers.get("user-agent"),
+        ipAddress,
+        userAgent,
       }
     }
 
