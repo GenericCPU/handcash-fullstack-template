@@ -42,6 +42,18 @@ interface CreatedPaymentRequest {
   customData?: any
 }
 
+interface Payment {
+  id: string
+  paymentRequestId: string
+  transactionId: string
+  amount: number
+  currency: string
+  paidBy?: string
+  paidAt: string
+  status: "completed" | "failed" | "cancelled"
+  metadata?: Record<string, any>
+}
+
 export function PaymentRequestManagement() {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -63,10 +75,39 @@ export function PaymentRequestManagement() {
   const [updateRequestId, setUpdateRequestId] = useState<string | null>(null)
   const [showAllRequests, setShowAllRequests] = useState(false)
   const [expandedRequestId, setExpandedRequestId] = useState<string | null>(null)
+  const [payments, setPayments] = useState<Record<string, Payment[]>>({})
+  const [loadingPayments, setLoadingPayments] = useState<Record<string, boolean>>({})
+  const [websiteUrlConfigured, setWebsiteUrlConfigured] = useState<boolean>(true)
+  const [webhookUrl, setWebhookUrl] = useState<string | null>(null)
 
   useEffect(() => {
     fetchPaymentRequests()
+    checkConfig()
   }, [])
+
+  const checkConfig = async () => {
+    try {
+      const response = await fetch("/api/admin/config-check", {
+        method: "GET",
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setWebsiteUrlConfigured(data.config?.websiteUrlConfigured ?? false)
+        setWebhookUrl(data.config?.webhookUrl || null)
+      }
+    } catch (err) {
+      console.error("Failed to check config:", err)
+    }
+  }
+
+  // Fetch payments when a request is expanded
+  useEffect(() => {
+    if (expandedRequestId) {
+      fetchPaymentsForRequest(expandedRequestId)
+    }
+  }, [expandedRequestId])
 
   const fetchPaymentRequests = async () => {
     setIsFetching(true)
@@ -78,8 +119,6 @@ export function PaymentRequestManagement() {
 
       if (response.ok) {
         const data = await response.json()
-        console.log("Fetched payment requests:", data)
-
         const requests = Array.isArray(data) ? data : data.items || data.paymentRequests || []
 
         const mappedRequests: CreatedPaymentRequest[] = requests.map((req: any) => ({
@@ -110,6 +149,33 @@ export function PaymentRequestManagement() {
       console.error("Failed to fetch payment requests:", err)
     } finally {
       setIsFetching(false)
+    }
+  }
+
+  const fetchPaymentsForRequest = async (paymentRequestId: string) => {
+    // Don't fetch if already loading or already fetched
+    if (loadingPayments[paymentRequestId] || payments[paymentRequestId]) {
+      return
+    }
+
+    setLoadingPayments((prev) => ({ ...prev, [paymentRequestId]: true }))
+    try {
+      const response = await fetch(`/api/admin/payment-requests/${paymentRequestId}/payments`, {
+        method: "GET",
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPayments((prev) => ({
+          ...prev,
+          [paymentRequestId]: data.payments || [],
+        }))
+      }
+    } catch (err) {
+      console.error("Failed to fetch payments:", err)
+    } finally {
+      setLoadingPayments((prev) => ({ ...prev, [paymentRequestId]: false }))
     }
   }
 
@@ -159,8 +225,6 @@ export function PaymentRequestManagement() {
         throw new Error(errorMessage)
       }
 
-      console.log("Full API response:", JSON.stringify(responseData, null, 2))
-
       const newRequest: CreatedPaymentRequest = {
         id: responseData.id,
         paymentUrl: responseData.paymentRequestUrl || responseData.paymentUrl || responseData.url || "",
@@ -173,8 +237,6 @@ export function PaymentRequestManagement() {
         imageUrl: imageUrl || undefined,
         createdAt: responseData.createdAt || new Date().toISOString(),
       }
-
-      console.log("Mapped payment request:", newRequest)
 
       setSuccess(`Payment request ${isUpdate ? "updated" : "created"} successfully!`)
       setCreatedRequest(newRequest)
@@ -303,15 +365,28 @@ export function PaymentRequestManagement() {
             <Receipt className="w-4 h-4 md:w-5 md:h-5 text-primary" />
             <h3 className="text-base md:text-lg font-semibold">Payment Requests</h3>
           </div>
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-9 md:h-10">
-                <Plus className="w-4 h-4 mr-2" />
-                Create
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[95vw] md:max-w-md max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
+        </div>
+
+        {/* Webhook Configuration Notice */}
+        {!websiteUrlConfigured && (
+          <Alert variant="destructive" className="mb-4 rounded-2xl border-border">
+            <XCircle className="w-4 h-4" />
+            <AlertDescription className="text-xs md:text-sm">
+              <strong>WEBSITE_URL not configured:</strong> Payment requests cannot be created and webhooks will not work
+              until you set the <code className="bg-background px-1 py-0.5 rounded">WEBSITE_URL</code> environment
+              variable. Once configured, set the webhook URL in your HandCash dashboard to:{" "}
+              {webhookUrl ? (
+                <code className="bg-background px-1 py-0.5 rounded break-all">{webhookUrl}</code>
+              ) : (
+                <code className="bg-background px-1 py-0.5 rounded">{"${WEBSITE_URL}/api/webhooks/payment"}</code>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogContent className="max-w-[95vw] md:max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
                 <DialogTitle className="text-base md:text-lg">
                   {isUpdating ? "Update Payment Request" : "Create Payment Request"}
                 </DialogTitle>
@@ -320,6 +395,24 @@ export function PaymentRequestManagement() {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreatePaymentRequest} className="space-y-4">
+                {!websiteUrlConfigured && (
+                  <Alert variant="destructive" className="mb-4">
+                    <XCircle className="w-4 h-4" />
+                    <AlertDescription className="text-xs md:text-sm">
+                      <strong>WEBSITE_URL not configured.</strong> Payment requests cannot be created until you set the{" "}
+                      <code className="bg-background px-1 py-0.5 rounded">WEBSITE_URL</code> environment variable. This
+                      is required for payment webhooks to work.
+                      {webhookUrl && (
+                        <>
+                          {" "}
+                          Configure the webhook URL in your HandCash dashboard:{" "}
+                          <code className="bg-background px-1 py-0.5 rounded break-all">{webhookUrl}</code>
+                        </>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="grid grid-cols-2 gap-3 md:gap-4">
                   <div className="space-y-1.5 md:space-y-2">
                     <Label htmlFor="amount" className="text-xs md:text-sm">
@@ -438,7 +531,7 @@ export function PaymentRequestManagement() {
                   </Alert>
                 )}
 
-                <Button type="submit" className="w-full h-10 md:h-11" disabled={isCreating}>
+                <Button type="submit" className="w-full h-10 md:h-11" disabled={isCreating || !websiteUrlConfigured}>
                   {isCreating ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -454,9 +547,8 @@ export function PaymentRequestManagement() {
               </form>
             </DialogContent>
           </Dialog>
-        </div>
 
-        {/* Success/Error Messages */}
+          {/* Success/Error Messages */}
         {success && (
           <Alert className="mb-4">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
@@ -571,6 +663,7 @@ export function PaymentRequestManagement() {
               variant="outline"
               size="sm"
               className="bg-transparent h-9"
+              disabled={!websiteUrlConfigured}
               onClick={() => setCreateDialogOpen(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -742,6 +835,82 @@ export function PaymentRequestManagement() {
                             <ExternalLink className="w-4 h-4" />
                           </Button>
                         </div>
+                      </div>
+
+                      {webhookUrl && (
+                        <div className="space-y-2">
+                          <Label className="text-xs md:text-sm">Webhook URL</Label>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Configure this URL in your HandCash dashboard to receive payment notifications for this payment request.
+                          </p>
+                          <div className="flex gap-2">
+                            <Input value={webhookUrl} readOnly className="h-9 md:h-10 text-xs md:text-sm font-mono" />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-9 w-9 md:h-10 md:w-10 shrink-0 bg-transparent"
+                              onClick={() => copyToClipboard(webhookUrl, "Webhook URL")}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Payments Section */}
+                      <div className="space-y-2 border-t pt-4">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs md:text-sm font-semibold">Payments</Label>
+                          {loadingPayments[req.id] && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                        </div>
+                        {payments[req.id] && payments[req.id].length > 0 ? (
+                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                            {payments[req.id].map((payment) => (
+                              <div
+                                key={payment.id}
+                                className="flex items-center justify-between p-3 bg-background rounded-lg border"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="text-sm font-medium">
+                                      {formatCurrency(payment.amount, payment.currency)}
+                                    </p>
+                                    <Badge
+                                      variant={
+                                        payment.status === "completed"
+                                          ? "default"
+                                          : payment.status === "failed"
+                                            ? "destructive"
+                                            : "secondary"
+                                      }
+                                      className="text-xs"
+                                    >
+                                      {payment.status}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    {payment.paidBy && <span>By: {payment.paidBy}</span>}
+                                    {payment.paidBy && payment.paidAt && <span>•</span>}
+                                    {payment.paidAt && <span>{formatDate(payment.paidAt)}</span>}
+                                  </div>
+                                  {payment.transactionId && (
+                                    <p className="text-xs text-muted-foreground font-mono truncate mt-1">
+                                      TX: {payment.transactionId}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : loadingPayments[req.id] ? (
+                          <div className="text-center py-4 text-sm text-muted-foreground">
+                            Loading payments...
+                          </div>
+                        ) : (
+                          <div className="text-center py-4 text-sm text-muted-foreground border rounded-lg bg-background">
+                            No payments yet
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex gap-2">

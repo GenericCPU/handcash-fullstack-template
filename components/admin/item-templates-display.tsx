@@ -7,7 +7,20 @@ import { Loader2, RefreshCw, Sparkles, FileText, Copy } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { ItemTemplateMintDialog } from "@/components/admin/item-template-mint-dialog"
+import { ItemTemplateCreateDialog } from "@/components/admin/item-template-create-dialog"
 import { MediaPreview } from "@/components/admin/media-preview"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Trash2, Pencil } from "lucide-react"
+import { toast } from "sonner"
 
 interface ItemTemplate {
   id: string
@@ -32,6 +45,11 @@ export function ItemTemplatesDisplay() {
   const [selectedTemplate, setSelectedTemplate] = useState<ItemTemplate | null>(null)
   const [isMintOpen, setIsMintOpen] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [editingTemplate, setEditingTemplate] = useState<ItemTemplate | null>(null)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [deletingTemplate, setDeletingTemplate] = useState<ItemTemplate | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const copyTemplateId = async (templateId: string) => {
     await navigator.clipboard.writeText(templateId)
@@ -77,6 +95,55 @@ export function ItemTemplatesDisplay() {
     fetchTemplates()
   }
 
+  const handleEdit = (template: ItemTemplate, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+    }
+    setEditingTemplate(template)
+    setIsEditOpen(true)
+  }
+
+  const handleEditSuccess = () => {
+    setIsEditOpen(false)
+    setEditingTemplate(null)
+    fetchTemplates()
+  }
+
+  const handleDeleteClick = (template: ItemTemplate, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+    }
+    setDeletingTemplate(template)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingTemplate) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/admin/item-templates?id=${deletingTemplate.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to delete template")
+      }
+
+      toast.success("Template deleted successfully")
+      setIsDeleteDialogOpen(false)
+      setDeletingTemplate(null)
+      fetchTemplates()
+    } catch (err: any) {
+      console.error("Delete template error:", err)
+      toast.error(err.message || "Failed to delete template")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   useEffect(() => {
     fetchTemplates()
   }, [])
@@ -117,7 +184,8 @@ export function ItemTemplatesDisplay() {
             {templates.map((template) => (
               <div
                 key={template.id}
-                className="group relative overflow-hidden rounded-2xl border border-border bg-card hover:shadow-lg transition-all"
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card hover:shadow-lg transition-all cursor-pointer"
+                onClick={() => handleEdit(template)}
               >
                 <div className="aspect-square overflow-hidden bg-muted">
                   <MediaPreview
@@ -139,19 +207,35 @@ export function ItemTemplatesDisplay() {
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{template.description}</p>
                   )}
                   <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="outline" className="text-xs rounded-full font-mono">
+                    <Badge variant="outline" className="text-xs rounded-full font-mono flex-1">
                       ID: {template.id}
                     </Badge>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-5 w-5 p-0"
+                      className="h-5 w-5 p-0 shrink-0"
                       onClick={(e) => {
                         e.stopPropagation()
                         copyTemplateId(template.id)
                       }}
                     >
                       <Copy className={`w-3 h-3 ${copiedId === template.id ? "text-green-500" : ""}`} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0 shrink-0"
+                      onClick={(e) => handleEdit(template, e)}
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0 shrink-0 text-destructive hover:text-destructive"
+                      onClick={(e) => handleDeleteClick(template, e)}
+                    >
+                      <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
                   {template.attributes && template.attributes.length > 0 && (
@@ -167,7 +251,10 @@ export function ItemTemplatesDisplay() {
                     variant="default"
                     size="sm"
                     className="w-full rounded-full"
-                    onClick={() => handleMint(template)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleMint(template)
+                    }}
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
                     Mint
@@ -187,6 +274,41 @@ export function ItemTemplatesDisplay() {
           onSuccess={handleMintSuccess}
         />
       )}
+
+      <ItemTemplateCreateDialog
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        onSuccess={handleEditSuccess}
+        template={editingTemplate}
+      />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingTemplate?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

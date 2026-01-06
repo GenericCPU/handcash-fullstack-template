@@ -33,12 +33,13 @@ export async function POST(request: NextRequest) {
 
     let destinationUserId: string | undefined
     if (destination) {
-      const cleanHandle = destination.replace(/^[@$]/, "")
-      const handleMap = await resolveHandlesToUserIds([cleanHandle], businessAuthToken)
-      destinationUserId = handleMap[cleanHandle.toLowerCase()]
+      const trimmed = destination.trim()
+      // resolveHandlesToUserIds now accepts both handles and user IDs
+      const handleMap = await resolveHandlesToUserIds([trimmed], businessAuthToken)
+      destinationUserId = handleMap[trimmed.toLowerCase()]
 
       if (!destinationUserId) {
-        return NextResponse.json({ error: `Could not resolve handle: ${destination}` }, { status: 400 })
+        return NextResponse.json({ error: `Could not resolve handle or user ID: ${destination}` }, { status: 400 })
       }
     }
 
@@ -57,16 +58,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const itemData: {
-      user?: string
-      name: string
-      rarity: string
-      quantity: number
-      color?: string
-      description?: string
-      attributes: Array<{ name: string; value: string | number; displayType: "string" | "number" }>
-      mediaDetails: any
-    } = {
+    const itemData: any = {
       name,
       rarity: rarity || "Common",
       quantity: quantity || 1,
@@ -76,6 +68,7 @@ export async function POST(request: NextRequest) {
         displayType: (attr.displayType as "string" | "number") || "string",
       })),
       mediaDetails,
+      actions: [],
     }
 
     if (destinationUserId) {

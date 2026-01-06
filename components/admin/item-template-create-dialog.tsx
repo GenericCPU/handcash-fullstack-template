@@ -23,13 +23,31 @@ interface Collection {
   name: string
 }
 
+interface ItemTemplate {
+  id: string
+  name: string
+  description?: string
+  imageUrl?: string
+  multimediaUrl?: string
+  collectionId: string
+  attributes?: Array<{
+    name: string
+    value: string | number
+    displayType?: "string" | "number"
+  }>
+  rarity?: string
+  color?: string
+}
+
 interface ItemTemplateCreateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  template?: ItemTemplate | null
 }
 
-export function ItemTemplateCreateDialog({ open, onOpenChange, onSuccess }: ItemTemplateCreateDialogProps) {
+export function ItemTemplateCreateDialog({ open, onOpenChange, onSuccess, template }: ItemTemplateCreateDialogProps) {
+  const isEditMode = !!template
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [imageUrl, setImageUrl] = useState("")
@@ -45,8 +63,27 @@ export function ItemTemplateCreateDialog({ open, onOpenChange, onSuccess }: Item
   useEffect(() => {
     if (open) {
       fetchCollections()
+      if (template) {
+        // Pre-fill form with template data
+        setName(template.name || "")
+        setDescription(template.description || "")
+        setImageUrl(template.imageUrl || "")
+        setMultimediaUrl(template.multimediaUrl || "")
+        setCollectionId(template.collectionId || "")
+        setRarity(template.rarity || "Common")
+        setColor(template.color || "")
+      } else {
+        // Reset form for new template
+        setName("")
+        setDescription("")
+        setImageUrl("")
+        setMultimediaUrl("")
+        setCollectionId("")
+        setRarity("Common")
+        setColor("")
+      }
     }
-  }, [open])
+  }, [open, template])
 
   const fetchCollections = async () => {
     setIsLoadingCollections(true)
@@ -84,19 +121,34 @@ export function ItemTemplateCreateDialog({ open, onOpenChange, onSuccess }: Item
     setError(null)
 
     try {
-      const response = await fetch("/api/admin/item-templates", {
-        method: "POST",
+      const url = "/api/admin/item-templates"
+      const method = isEditMode ? "PUT" : "POST"
+      const body = isEditMode
+        ? {
+            id: template!.id,
+            name: name.trim(),
+            description: description.trim() || undefined,
+            imageUrl: imageUrl.trim() || undefined,
+            multimediaUrl: multimediaUrl.trim() || undefined,
+            collectionId,
+            rarity: rarity || "Common",
+            color: color.trim() || undefined,
+          }
+        : {
+            name: name.trim(),
+            description: description.trim() || undefined,
+            imageUrl: imageUrl.trim() || undefined,
+            multimediaUrl: multimediaUrl.trim() || undefined,
+            collectionId,
+            rarity: rarity || "Common",
+            color: color.trim() || undefined,
+          }
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || undefined,
-          imageUrl: imageUrl.trim() || undefined,
-          multimediaUrl: multimediaUrl.trim() || undefined,
-          collectionId,
-          rarity: rarity || "Common",
-          color: color.trim() || undefined,
-        }),
+        body: JSON.stringify(body),
       })
 
       const data = await response.json()
@@ -127,8 +179,12 @@ export function ItemTemplateCreateDialog({ open, onOpenChange, onSuccess }: Item
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create Item Template</DialogTitle>
-          <DialogDescription>Create a template that can be used to mint items to multiple users</DialogDescription>
+          <DialogTitle>{isEditMode ? "Edit Item Template" : "Create Item Template"}</DialogTitle>
+          <DialogDescription>
+            {isEditMode
+              ? "Update the template that can be used to mint items to multiple users"
+              : "Create a template that can be used to mint items to multiple users"}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -274,12 +330,12 @@ export function ItemTemplateCreateDialog({ open, onOpenChange, onSuccess }: Item
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
+                {isEditMode ? "Updating..." : "Creating..."}
               </>
             ) : (
               <>
                 <Plus className="w-4 h-4 mr-2" />
-                Create Template
+                {isEditMode ? "Update Template" : "Create Template"}
               </>
             )}
           </Button>

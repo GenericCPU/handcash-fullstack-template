@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, Package, RefreshCw, Send, Eye, ChevronDown, ChevronUp, Flame } from "lucide-react"
@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { ItemTransferDialog } from "@/components/widgets/item-transfer-dialog"
 import { ItemInspectDialog } from "@/components/widgets/item-inspect-dialog"
+import { toast } from "sonner"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,66 +19,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
-interface InventoryItem {
-  id: string
-  origin?: string
-  name: string
-  description?: string
-  imageUrl?: string
-  multimediaUrl?: string
-  rarity?: string
-  color?: string
-  collection?: {
-    id: string
-    name?: string
-  }
-  attributes?: Array<{
-    name: string
-    value: string | number
-  }>
-}
+import { useInventory, type InventoryItem } from "@/hooks/use-inventory"
 
 export function InventoryDisplay() {
-  const [items, setItems] = useState<InventoryItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { items, collections, isLoading, error, isBurning, fetchInventory, burnItem } = useInventory()
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [isTransferOpen, setIsTransferOpen] = useState(false)
   const [inspectItem, setInspectItem] = useState<InventoryItem | null>(null)
   const [isInspectOpen, setIsInspectOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
-  const [burnItem, setBurnItem] = useState<InventoryItem | null>(null)
+  const [burnItemState, setBurnItemState] = useState<InventoryItem | null>(null)
   const [isBurnDialogOpen, setIsBurnDialogOpen] = useState(false)
-  const [isBurning, setIsBurning] = useState(false)
-  const [collections, setCollections] = useState<Array<{ id: string; name?: string }>>([])
-
-  const fetchInventory = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const response = await fetch("/api/inventory", {
-        credentials: "include",
-      })
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setIsLoading(false)
-          return
-        }
-        throw new Error("Failed to fetch inventory")
-      }
-
-      const data = await response.json()
-      setItems(data.items || [])
-    } catch (err: any) {
-      console.error("[v0] Inventory fetch error:", err)
-      setError(err.message || "Failed to load inventory")
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleTransfer = (item: InventoryItem) => {
     setSelectedItem(item)
@@ -91,94 +43,24 @@ export function InventoryDisplay() {
   }
 
   const handleBurnClick = (item: InventoryItem) => {
-    setBurnItem(item)
+    setBurnItemState(item)
     setIsBurnDialogOpen(true)
   }
 
   const handleBurnConfirm = async () => {
-    if (!burnItem || !burnItem.origin) {
+    if (!burnItemState || !burnItemState.origin) {
       return
     }
 
-    setIsBurning(true)
     try {
-      const response = await fetch("/api/items/burn", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          origin: burnItem.origin,
-        }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || data.details || "Failed to burn item")
-      }
-
+      await burnItem(burnItemState.origin)
       setIsBurnDialogOpen(false)
-      setBurnItem(null)
-      
-      // Add a small delay to ensure the burn has propagated before refreshing
-      await new Promise(resolve => setTimeout(resolve, 500))
-      fetchInventory()
+      setBurnItemState(null)
+      toast.success("Item burned successfully")
     } catch (err: any) {
-      console.error("[v0] Burn error:", err)
-      alert(err.message || "Failed to burn item")
-    } finally {
-      setIsBurning(false)
+      toast.error(err.message || "Failed to burn item")
     }
   }
-
-  const fetchCollections = async () => {
-    try {
-      // First, try to fetch collections from the public API (includes local storage)
-      const response = await fetch("/api/collections", {
-        credentials: "include",
-      })
-      
-      let apiCollections: Array<{ id: string; name?: string }> = []
-      if (response.ok) {
-        const data = await response.json()
-        apiCollections = data.collections || []
-      }
-
-      // Also extract collections from items (in case API doesn't have all of them)
-      const collectionMap = new Map<string, { id: string; name?: string }>()
-      
-      // Add API collections first (they have names from local storage)
-      apiCollections.forEach((col) => {
-        if (col.id) {
-          collectionMap.set(col.id, col)
-        }
-      })
-      
-      // Then add collections from items (may not have names, but API collections take precedence)
-      items.forEach((item) => {
-        if (item.collection?.id && !collectionMap.has(item.collection.id)) {
-          collectionMap.set(item.collection.id, {
-            id: item.collection.id,
-            name: item.collection.name,
-          })
-        }
-      })
-      
-      setCollections(Array.from(collectionMap.values()))
-    } catch (err) {
-      // Silently fail - collections are optional
-      console.error("[v0] Failed to fetch collections:", err)
-    }
-  }
-
-  useEffect(() => {
-    fetchInventory()
-  }, [])
-
-  useEffect(() => {
-    if (items.length > 0) {
-      fetchCollections()
-    }
-  }, [items])
 
   return (
     <>
@@ -188,7 +70,7 @@ export function InventoryDisplay() {
             <Package className="w-6 h-6 text-primary" />
             <h3 className="text-xl font-bold">My Inventory</h3>
           </div>
-          <Button variant="ghost" size="sm" onClick={fetchInventory} disabled={isLoading} className="rounded-full">
+          <Button variant="ghost" size="sm" onClick={() => fetchInventory()} disabled={isLoading} className="rounded-full">
             <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
         </div>
@@ -222,7 +104,14 @@ export function InventoryDisplay() {
                   />
                 </div>
                 <div className="p-4">
-                  <h4 className="font-bold mb-1 truncate text-base">{item.name}</h4>
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="font-bold truncate text-base">{item.name}</h4>
+                    {item.count !== undefined && item.count > 1 && (
+                      <Badge variant="outline" className="rounded-full text-xs font-semibold shrink-0 ml-2">
+                        ×{item.count}
+                      </Badge>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     {item.collection?.name && (
                       <Badge variant="secondary" className="rounded-full font-semibold text-xs">
@@ -259,32 +148,32 @@ export function InventoryDisplay() {
                       <span className="text-xs text-muted-foreground font-mono">{item.color}</span>
                     </div>
                   )}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 min-w-0">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="flex-1 rounded-full font-semibold h-10"
+                      className="flex-1 min-w-0 rounded-full font-semibold h-10"
                       onClick={() => {
                         setInspectItem(item)
                         setIsInspectOpen(true)
                       }}
                     >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Inspect
+                      <Eye className="w-4 h-4 mr-1.5 shrink-0" />
+                      <span className="truncate">Inspect</span>
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="flex-1 rounded-full font-semibold h-10"
+                      className="flex-1 min-w-0 rounded-full font-semibold h-10"
                       onClick={() => handleTransfer(item)}
                     >
-                      <Send className="w-4 h-4 mr-2" />
-                      Send
+                      <Send className="w-4 h-4 mr-1.5 shrink-0" />
+                      <span className="truncate">Send</span>
                     </Button>
                     <Button
                       size="sm"
                       variant="destructive"
-                      className="rounded-full font-semibold h-10 px-3"
+                      className="rounded-full font-semibold h-10 px-3 shrink-0"
                       onClick={() => handleBurnClick(item)}
                       disabled={!item.origin}
                     >
@@ -344,7 +233,7 @@ export function InventoryDisplay() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to burn this item?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The item "{burnItem?.name}" will be permanently destroyed.
+              This action cannot be undone. The item "{burnItemState?.name}" will be permanently destroyed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

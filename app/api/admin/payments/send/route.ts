@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       client,
       body: {
         instrumentCurrencyCode: instrument || "BSV",
+        denominationCurrencyCode: "USD", // Amount is in USD, convert to instrument currency
         description: description || undefined,
         receivers: [
           {

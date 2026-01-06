@@ -102,7 +102,7 @@ export async function requireAuth(request: NextRequest): Promise<
         // Update session activity
         session = updateSessionActivity(session)
       } catch (err) {
-        console.error("[v0] Session metadata parse error:", err)
+        console.error("[AuthMiddleware] Session metadata parse error:", err)
         session = null
       }
     }
@@ -143,7 +143,7 @@ export async function requireAuth(request: NextRequest): Promise<
       session,
     }
   } catch (error) {
-    console.error("[v0] Auth middleware error:", error)
+    console.error("[AuthMiddleware] Auth middleware error:", error)
     return {
       success: false,
       response: NextResponse.json({ error: "Authentication error" }, { status: 500 }),

@@ -72,16 +72,35 @@ See **[SECURITY.md](./SECURITY.md)** for complete security documentation.
 app/
 ├── page.tsx                    # Main page with AuthProvider integration
 ├── layout.tsx                  # Root layout with auth context
+├── admin/                      # Admin dashboard page
+│   ├── page.tsx
+│   └── layout.tsx
 ├── api/
 │   ├── auth/                   # Authentication endpoints (CSRF protected)
-│   ├── payments/               # Payment endpoints (with audit logging)
-│   ├── inventory/              # Inventory endpoints
-│   ├── friends/                # Friends list endpoint
-│   └── items/                  # Item transfer endpoints
+│   ├── admin/                  # Admin-only endpoints
+│   │   ├── payment-requests/   # Payment request management
+│   │   ├── items/              # Item operations (transfer, burn)
+│   │   ├── item-templates/     # Item template management
+│   │   ├── mint/               # Item minting
+│   │   ├── collections/        # Collection management
+│   │   ├── inventory/          # Business inventory
+│   │   ├── payments/           # Business payments
+│   │   └── balance/            # Business wallet balance
+│   ├── payments/               # User payment endpoints
+│   ├── inventory/              # User inventory endpoints
+│   ├── friends/                # User friends list endpoint
+│   ├── items/                  # User item transfer endpoints
+│   └── webhooks/               # Webhook endpoints
 components/
 ├── landing-content.tsx         # CUSTOMIZE: Landing page hero
 ├── authenticated-content.tsx   # CUSTOMIZE: Logged-in user content
-├── widgets/                    # Pre-built components you can use
+├── admin/                      # Admin dashboard components
+│   ├── admin-dashboard.tsx     # Main admin dashboard
+│   ├── payment-request-management.tsx
+│   ├── mint-interface.tsx
+│   ├── item-templates-display.tsx
+│   └── business-*.tsx          # Business wallet components
+├── widgets/                    # User-facing widgets
 │   ├── friends-list.tsx
 │   ├── inventory-display.tsx
 │   ├── payment-interface.tsx
@@ -94,8 +113,15 @@ lib/
 ├── handcash-service.ts         # Centralized HandCash SDK wrapper
 ├── auth-context.tsx            # Centralized authentication context
 ├── auth-middleware.ts          # Unified auth validation for routes
+├── admin-middleware.ts         # Admin auth validation
 ├── csrf-utils.ts               # CSRF token generation and validation
 ├── session-utils.ts            # Session management with metadata
+├── payments-storage.ts         # Payment storage (for webhooks)
+├── item-templates-storage.ts   # Item template storage
+└── collections-storage.ts      # Collection storage
+```
+
+**Modular Structure**: This template is organized into clear, removable chunks. See **[docs/MODULAR_STRUCTURE.md](./docs/MODULAR_STRUCTURE.md)** for a complete guide on removing features and organizing code.
 └── audit-logger.ts             # Security event logging
 ```
 

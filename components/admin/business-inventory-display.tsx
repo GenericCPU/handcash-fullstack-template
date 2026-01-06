@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, Package, RefreshCw, Send, Eye, ChevronDown, ChevronUp, Flame } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 import { ItemTransferDialog } from "@/components/widgets/item-transfer-dialog"
 import { ItemInspectDialog } from "@/components/widgets/item-inspect-dialog"
 import {
@@ -123,8 +124,8 @@ export function BusinessInventoryDisplay() {
       await new Promise(resolve => setTimeout(resolve, 500))
       fetchInventory()
     } catch (err: any) {
-      console.error("[v0] Burn error:", err)
-      alert(err.message || "Failed to burn item")
+      console.error("[BusinessInventory] Burn error:", err)
+      toast.error(err.message || "Failed to burn item")
     } finally {
       setIsBurning(false)
     }
@@ -238,32 +239,32 @@ export function BusinessInventoryDisplay() {
                       <span className="text-xs text-muted-foreground font-mono">{item.color}</span>
                     </div>
                   )}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 min-w-0">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 rounded-full"
+                      className="flex-1 min-w-0 rounded-full"
                       onClick={() => {
                         setInspectItem(item)
                         setIsInspectOpen(true)
                       }}
                     >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Inspect
+                      <Eye className="w-4 h-4 mr-1.5 shrink-0" />
+                      <span className="truncate">Inspect</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 rounded-full"
+                      className="flex-1 min-w-0 rounded-full"
                       onClick={() => handleTransfer(item)}
                     >
-                      <Send className="w-4 h-4 mr-2" />
-                      Transfer
+                      <Send className="w-4 h-4 mr-1.5 shrink-0" />
+                      <span className="truncate">Transfer</span>
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
-                      className="rounded-full px-3"
+                      className="rounded-full px-3 shrink-0"
                       onClick={() => handleBurnClick(item)}
                       disabled={!item.origin}
                     >

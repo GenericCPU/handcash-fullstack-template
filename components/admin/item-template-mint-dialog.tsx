@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -51,6 +51,30 @@ export function ItemTemplateMintDialog({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState(false)
+  const [businessWalletHandle, setBusinessWalletHandle] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Fetch business wallet handle when dialog opens
+    if (open) {
+      const fetchBusinessWallet = async () => {
+        try {
+          const response = await fetch("/api/admin/business/profile", {
+            credentials: "include",
+          })
+          if (response.ok) {
+            const data = await response.json()
+            const handle = data.publicProfile?.handle || data.handle
+            if (handle) {
+              setBusinessWalletHandle(handle.replace(/^[@$]/, "").toLowerCase())
+            }
+          }
+        } catch (err) {
+          // Silently fail - business wallet handle is optional
+        }
+      }
+      fetchBusinessWallet()
+    }
+  }, [open])
 
   const copyTemplateId = async () => {
     await navigator.clipboard.writeText(template.id)
@@ -60,7 +84,7 @@ export function ItemTemplateMintDialog({
 
   const handleMint = async () => {
     if (!handles.trim()) {
-      setError("Please enter at least one handle")
+      setError("Please enter at least one handle or user ID")
       return
     }
 
@@ -69,15 +93,22 @@ export function ItemTemplateMintDialog({
     setSuccess(null)
 
     try {
-      // Parse handles from textarea (comma or newline separated)
-      const handleList = handles
+      // Parse handles/IDs from textarea (comma or newline separated)
+      const inputList = handles
         .split(/[,\n]/)
         .map((h) => h.trim())
         .filter((h) => h.length > 0)
-        .map((h) => h.replace(/^[@$]/, ""))
+        .map((h) => {
+          // Support business wallet shortcut
+          const lower = h.toLowerCase().replace(/^[@$]/, "")
+          if (businessWalletHandle && (lower === businessWalletHandle || lower === "business" || lower === "businesswallet")) {
+            return businessWalletHandle
+          }
+          return h
+        })
 
-      if (handleList.length === 0) {
-        setError("Please enter at least one valid handle")
+      if (inputList.length === 0) {
+        setError("Please enter at least one valid handle or user ID")
         setIsLoading(false)
         return
       }
@@ -88,7 +119,7 @@ export function ItemTemplateMintDialog({
         credentials: "include",
         body: JSON.stringify({
           templateId: template.id,
-          handles: handleList,
+          handles: inputList,
         }),
       })
 
@@ -98,7 +129,7 @@ export function ItemTemplateMintDialog({
         throw new Error(data.details || data.error || "Minting failed")
       }
 
-      setSuccess(`Successfully minted ${data.data?.mintedCount || handleList.length} item(s) to ${handleList.length} user(s)`)
+      setSuccess(`Successfully minted ${data.data?.mintedCount || inputList.length} item(s) to ${inputList.length} user(s)`)
       setHandles("")
       
       // Call onSuccess after a short delay to show success message
@@ -131,17 +162,17 @@ export function ItemTemplateMintDialog({
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-lg">{template.name}</p>
-              {template.description && <p className="text-sm text-muted-foreground mt-1">{template.description}</p>}
-              <div className="flex items-center gap-2 mt-2">
-                {template.rarity && <Badge variant="secondary" className="text-xs">{template.rarity}</Badge>}
-                <div className="flex items-center gap-1">
-                  <Badge variant="outline" className="text-xs font-mono">ID: {template.id}</Badge>
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <p className="font-medium text-lg break-words">{template.name}</p>
+              {template.description && <p className="text-sm text-muted-foreground mt-1 break-words">{template.description}</p>}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {template.rarity && <Badge variant="secondary" className="text-xs shrink-0">{template.rarity}</Badge>}
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <Badge variant="outline" className="text-xs font-mono break-all max-w-full">{template.id}</Badge>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-5 w-5 p-0"
+                    className="h-5 w-5 p-0 shrink-0"
                     onClick={copyTemplateId}
                     type="button"
                   >
@@ -154,19 +185,19 @@ export function ItemTemplateMintDialog({
 
           <div className="space-y-2">
             <Label htmlFor="handles">
-              HandCash Handles <span className="text-muted-foreground">(one per line or comma separated)</span>
+              HandCash Handles or User IDs <span className="text-muted-foreground">(one per line or comma separated)</span>
             </Label>
             <Textarea
               id="handles"
-              placeholder="$handle1&#10;$handle2&#10;$handle3"
+              placeholder={`$handle1\n$handle2\nuserid123...\n${businessWalletHandle ? `business (${businessWalletHandle})\n` : ""}`}
               value={handles}
               onChange={(e) => setHandles(e.target.value)}
               disabled={isLoading}
               rows={8}
               className="font-mono text-sm"
             />
-            <p className="text-xs text-muted-foreground">
-              Enter HandCash handles (with or without $ prefix), one per line or separated by commas
+            <p className="text-xs text-muted-foreground break-words">
+              Enter HandCash handles (with or without $ prefix), user IDs, or "business" for business wallet{businessWalletHandle ? ` (${businessWalletHandle})` : ""}. One per line or separated by commas.
             </p>
           </div>
 

@@ -69,26 +69,57 @@ export function getConnect() {
   return connectInstance
 }
 
-export async function resolveHandlesToUserIds(handles: string[], authToken: string): Promise<Record<string, string>> {
+/**
+ * Resolve handles and user IDs to user IDs
+ * Accepts both handles and user IDs - IDs are passed through, handles are resolved
+ * Returns a map from original input (lowercased) to user ID
+ */
+export async function resolveHandlesToUserIds(inputs: string[], authToken: string): Promise<Record<string, string>> {
   const connect = getConnect()
   const account = connect.getAccountFromAuthToken(authToken)
 
-  // Clean handles (remove $ prefix if present)
-  const cleanHandles = handles.map((h) => h.replace(/^\$/, ""))
+  // Separate IDs and handles
+  const userIds: string[] = []
+  const handles: string[] = []
+  const inputToLower: Record<string, string> = {} // Map lowercase input to original for lookup
 
-  // Batch resolve (API supports up to 10 at a time)
-  const handleToUserId: Record<string, string> = {}
+  inputs.forEach((input) => {
+    const trimmed = input.trim()
+    const lower = trimmed.toLowerCase()
+    inputToLower[lower] = trimmed
 
-  for (let i = 0; i < cleanHandles.length; i += 10) {
-    const batch = cleanHandles.slice(i, i + 10)
-    const profiles = await account.profile.getPublicProfilesByHandle(batch)
+    // Check if it's a user ID (hex string, 24+ chars)
+    if (/^[a-f0-9]{24,}$/i.test(trimmed)) {
+      userIds.push(trimmed)
+    } else {
+      // Clean handle (remove $/@ prefix)
+      const cleaned = trimmed.replace(/^[@$]/, "")
+      handles.push(cleaned)
+    }
+  })
 
-    profiles.forEach((profile: { handle: string; id: string }) => {
-      handleToUserId[profile.handle.toLowerCase()] = profile.id
-    })
+  // Start with IDs (map to themselves)
+  const result: Record<string, string> = {}
+  userIds.forEach((id) => {
+    result[id.toLowerCase()] = id
+  })
+
+  // Resolve handles to IDs (API supports up to 10 at a time)
+  for (let i = 0; i < handles.length; i += 10) {
+    const batch = handles.slice(i, i + 10)
+    try {
+      const profiles = await account.profile.getPublicProfilesByHandle(batch)
+      profiles.forEach((profile: { handle: string; id: string }) => {
+        const handleLower = profile.handle.toLowerCase()
+        result[handleLower] = profile.id
+      })
+    } catch (error) {
+      console.error(`[ItemsClient] Error resolving batch of handles:`, error)
+      // Continue with next batch - handles that don't exist just won't be in the map
+    }
   }
 
-  return handleToUserId
+  return result
 }
 
 export const getMinterClient = getMinter

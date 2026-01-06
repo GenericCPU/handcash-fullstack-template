@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -12,25 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Copy, Check } from "lucide-react"
 import { MediaPreview } from "@/components/admin/media-preview"
-
-interface InventoryItem {
-  id: string
-  origin?: string
-  name: string
-  description?: string
-  imageUrl?: string
-  multimediaUrl?: string
-  rarity?: string
-  color?: string
-  collection?: {
-    id: string
-    name?: string
-  }
-  attributes?: Array<{
-    name: string
-    value: string | number
-  }>
-}
+import type { InventoryItem } from "@/hooks/use-inventory"
 
 interface ItemInspectDialogProps {
   item: InventoryItem
@@ -194,6 +176,16 @@ export function ItemInspectDialog({ item, open, onOpenChange, collections = [] }
             </div>
           )}
 
+          {/* Count */}
+          {item.count !== undefined && item.count > 1 && (
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-muted-foreground">Quantity</label>
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="font-medium text-sm">{item.count} item{item.count > 1 ? 's' : ''}</p>
+              </div>
+            </div>
+          )}
+
           {/* Attributes - Show all attributes */}
           {item.attributes && item.attributes.length > 0 && (
             <div className="space-y-2">
@@ -204,11 +196,19 @@ export function ItemInspectDialog({ item, open, onOpenChange, collections = [] }
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium text-sm">{attr.name}</span>
                       <Badge variant="outline" className="text-xs rounded-full">
-                        {attr.value}
+                        {String(attr.value)}
                       </Badge>
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+          {(!item.attributes || item.attributes.length === 0) && (
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-muted-foreground">Attributes</label>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground italic">No attributes</p>
               </div>
             </div>
           )}

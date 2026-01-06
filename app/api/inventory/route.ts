@@ -11,18 +11,15 @@ export async function GET(request: NextRequest) {
 
   const { privateKey } = authResult
 
-  console.log("[v0] Inventory - privateKey exists:", !!privateKey)
-
   try {
     const items = await handcashService.getInventory(privateKey)
-    console.log("[v0] Inventory items count:", items?.length || 0)
 
     return NextResponse.json({
       success: true,
       items,
     })
   } catch (error) {
-    console.error("[v0] Inventory error:", error)
+    console.error("[Inventory] Inventory error:", error)
     return NextResponse.json(
       {
         error: "Failed to fetch inventory",

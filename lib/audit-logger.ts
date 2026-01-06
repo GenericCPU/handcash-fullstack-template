@@ -39,11 +39,10 @@ export function logAuditEvent(event: Omit<AuditEvent, "timestamp">): void {
   }
 
   // Console logging for development
+  // In production, integrate with a logging service (e.g., Sentry, DataDog, CloudWatch)
+  // Example: await sendToLoggingService(fullEvent)
   console.log(
     `[AUDIT] ${fullEvent.type} | ${fullEvent.success ? "SUCCESS" : "FAILURE"} | Session: ${fullEvent.sessionId || "N/A"}`,
     fullEvent,
   )
-
-  // TODO: In production, send to logging service (e.g., Sentry, DataDog, etc.)
-  // await sendToLoggingService(fullEvent)
 }

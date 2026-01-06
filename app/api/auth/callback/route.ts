@@ -14,12 +14,11 @@ export async function GET(request: NextRequest) {
       try {
         storedCSRFToken = JSON.parse(csrfTokenCookie)
       } catch (err) {
-        console.error("[v0] CSRF token parse error:", err)
+        console.error("[Auth] CSRF token parse error:", err)
       }
     }
 
     if (!validateCSRFToken(storedCSRFToken, stateParam)) {
-      console.error("[v0] CSRF validation failed")
 
       logAuditEvent({
         type: AuditEventType.CSRF_VIOLATION,
@@ -38,7 +37,6 @@ export async function GET(request: NextRequest) {
     const privateKey = request.cookies.get("handcash_temp_private_key")?.value
 
     if (!privateKey) {
-      console.error("[v0] No private key found in cookie")
 
       logAuditEvent({
         type: AuditEventType.LOGIN_FAILED,
@@ -107,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     return response
   } catch (error) {
-    console.error("[v0] Callback validation error:", error)
+    console.error("[Auth] Callback validation error:", error)
 
     logAuditEvent({
       type: AuditEventType.LOGIN_FAILED,

@@ -72,7 +72,7 @@ export class HandCashService {
     params: {
       destination: string
       amount: number
-      instrument?: string
+      currency?: string
       description?: string
     },
   ) {
@@ -81,7 +81,7 @@ export class HandCashService {
     const { data, error } = await Connect.pay({
       client,
       body: {
-        instrumentCurrencyCode: params.instrument || "BSV",
+        instrumentCurrencyCode: params.currency || "BSV",
         description: params.description || undefined,
         receivers: [
           {

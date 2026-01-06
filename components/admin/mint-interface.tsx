@@ -609,7 +609,7 @@ export const MintInterface = forwardRef<MintInterfaceRef, {}>(function MintInter
                   <Input
                     id="destination"
                     type="text"
-                    placeholder="@handle or paymail"
+                    placeholder="@handle, user ID, or paymail"
                     value={destination}
                     onChange={(e) => setDestination(e.target.value)}
                   />
@@ -700,10 +700,29 @@ export const MintInterface = forwardRef<MintInterfaceRef, {}>(function MintInter
                 </Alert>
               )}
 
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCreateTemplate}
+                  disabled={isCreatingTemplate || isMinting || !collectionId || !name.trim() || (!imageUrl && !multimediaUrl)}
+                  className="w-full"
+                >
+                  {isCreatingTemplate ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating Template...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Create Template
+                    </>
+                  )}
+                </Button>
                 <Button
                   type="submit"
-                  className="flex-1"
+                  className="w-full"
                   disabled={isMinting || isCreatingTemplate || !collectionId || (!imageUrl && !multimediaUrl)}
                 >
                   {isMinting ? (

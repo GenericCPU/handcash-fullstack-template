@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/admin-middleware"
 import { getTemplateById } from "@/lib/item-templates-storage"
-import { getMinter, resolveHandlesToUserIds } from "@/lib/items-client"
+import { getMinter, resolveHandlesToUserIds, getBusinessClient, Connect } from "@/lib/items-client"
 
 export async function POST(request: NextRequest) {
   const adminResult = await requireAdmin(request)
@@ -32,9 +32,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 })
     }
 
-    // Resolve handles to user IDs
-    const cleanHandles = handles.map((h: string) => h.trim().replace(/^[@$]/, "")).filter((h: string) => h.length > 0)
-    const handleMap = await resolveHandlesToUserIds(cleanHandles, businessAuthToken)
+    // Get business wallet profile to support business wallet handle/ID
+    let businessWalletId: string | null = null
+    let businessWalletHandle: string | null = null
+    try {
+      const businessClient = getBusinessClient()
+      const result = await Connect.getCurrentUserProfile({ client: businessClient as any })
+      if (result.error) {
+        throw new Error((result.error as any).message || "Failed to get profile")
+      }
+      const profile = result.data || result
+      if (profile) {
+        businessWalletId = (profile as any).publicProfile?.id || (profile as any).id
+        businessWalletHandle = (profile as any).publicProfile?.handle?.toLowerCase().replace(/^[@$]/, "") || null
+      }
+    } catch (err) {
+      console.error("[MintTemplate] Failed to get business wallet profile:", err)
+    }
+
+    // Parse inputs (handles, user IDs, or business wallet handle)
+    const cleanInputs = handles
+      .map((h: string) => h.trim())
+      .filter((h: string) => h.length > 0)
+      .map((h: string) => {
+        // Support business wallet handle
+        const lower = h.toLowerCase().replace(/^[@$]/, "")
+        if (businessWalletHandle && (lower === businessWalletHandle || lower === "business" || lower === "businesswallet")) {
+          return businessWalletId || h
+        }
+        return h
+      })
+
+    // Resolve handles/IDs to user IDs (accepts both handles and IDs)
+    const handleMap = await resolveHandlesToUserIds(cleanInputs, businessAuthToken)
 
     // Create items for each user
     const minter = getMinter()
@@ -78,31 +108,34 @@ export async function POST(request: NextRequest) {
       color: template.color,
     }
 
-    const items: Array<{
-      user: string
-      name: string
-      rarity: string
-      quantity: number
-      color?: string
-      description?: string
-      attributes: Array<{ name: string; value: string | number; displayType: "string" | "number" }>
-      mediaDetails: { image: { url: string; contentType: string } }
-    }> = []
+    const items: Array<any> = []
 
-    for (const handle of cleanHandles) {
-      const userId = handleMap[handle.toLowerCase()]
+    // Build user ID list - check both original input and resolved map
+    for (const input of cleanInputs) {
+      const lower = input.toLowerCase()
+      let userId: string | undefined
+
+      // Check if it's already a user ID
+      if (/^[a-f0-9]{24,}$/i.test(input)) {
+        userId = input
+      } else {
+        // Look up in resolved map
+        userId = handleMap[lower]
+      }
+
       if (!userId) {
-        continue // Skip handles that couldn't be resolved
+        continue // Skip inputs that couldn't be resolved
       }
 
       items.push({
         ...itemData,
         user: userId,
+        actions: [],
       })
     }
 
     if (items.length === 0) {
-      return NextResponse.json({ error: "No valid handles could be resolved" }, { status: 400 })
+      return NextResponse.json({ error: "No valid handles or user IDs could be resolved" }, { status: 400 })
     }
 
     // Create minting order

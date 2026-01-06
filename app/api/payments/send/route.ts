@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       amount: Number.parseFloat(amount),
       instrument,
       description,
+      denominationCurrencyCode: "USD", // Amount is in USD, convert to instrument currency
     })
 
     logAuditEvent({

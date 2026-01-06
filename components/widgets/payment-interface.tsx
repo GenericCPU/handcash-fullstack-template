@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,36 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Send, Wallet, RefreshCw } from "lucide-react"
-
-interface Balance {
-  spendableBalances: {
-    items: Array<{
-      spendableBalance: number
-      currencyCode: string
-    }>
-  }
-  allBalances: {
-    items: Array<{
-      currency: {
-        code: string
-        logoUrl: string
-        symbol: string
-      }
-      units: number
-      fiatEquivalent: {
-        currencyCode: string
-        units: number
-      }
-    }>
-  }
-}
+import { usePayments } from "@/hooks/use-payments"
 
 export function PaymentInterface() {
-  const [balance, setBalance] = useState<Balance | null>(null)
-  const [isLoadingBalance, setIsLoadingBalance] = useState(true)
-  const [isSending, setIsSending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
+  const { balance, isLoadingBalance, isSending, error, success, fetchBalance, sendPayment, clearError, clearSuccess } = usePayments()
 
   // Form state
   const [destination, setDestination] = useState("")
@@ -47,71 +21,23 @@ export function PaymentInterface() {
   const [description, setDescription] = useState("")
   const [instrument, setInstrument] = useState("BSV")
 
-  const fetchBalance = async () => {
-    setIsLoadingBalance(true)
-    setError(null)
-    try {
-      const response = await fetch("/api/payments/balance", {
-        credentials: "include", // Automatically sends cookies
-      })
-
-      if (!response.ok) {
-        // Not authenticated or error
-        setIsLoadingBalance(false)
-        return
-      }
-
-      const data = await response.json()
-      setBalance(data)
-    } catch (err) {
-      console.error("[v0] Balance fetch error:", err)
-      setError("Failed to load balance")
-    } finally {
-      setIsLoadingBalance(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchBalance()
-  }, [])
-
   const handleSendPayment = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSending(true)
-    setError(null)
-    setSuccess(null)
+    clearError()
+    clearSuccess()
 
     try {
-      const response = await fetch("/api/payments/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Automatically sends cookies
-        body: JSON.stringify({
-          destination,
-          amount,
-          instrument,
-          description,
-        }),
+      await sendPayment({
+        destination,
+        amount,
+        instrument,
+        description,
       })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Payment failed")
-      }
-
-      setSuccess(`Payment sent successfully! Transaction ID: ${data.data?.transactionId || "N/A"}`)
       setDestination("")
       setAmount("")
       setDescription("")
-      fetchBalance()
-    } catch (err: any) {
-      console.error("[v0] Payment error:", err)
-      setError(err.message || "Failed to send payment")
-    } finally {
-      setIsSending(false)
+    } catch (err) {
+      // Error is already handled by the hook
     }
   }
 
@@ -124,7 +50,7 @@ export function PaymentInterface() {
             <Wallet className="w-5 h-5 text-primary" />
             <h3 className="text-lg font-bold">Wallet Balance</h3>
           </div>
-          <Button variant="ghost" size="sm" onClick={fetchBalance} disabled={isLoadingBalance} className="rounded-full h-8 w-8 p-0">
+          <Button variant="ghost" size="sm" onClick={() => fetchBalance()} disabled={isLoadingBalance} className="rounded-full h-8 w-8 p-0">
             <RefreshCw className={`w-4 h-4 ${isLoadingBalance ? "animate-spin" : ""}`} />
           </Button>
         </div>

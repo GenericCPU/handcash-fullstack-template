@@ -37,7 +37,7 @@ export default function AdminDashboard() {
     <div className="bg-background min-h-screen">
       <HeaderBar />
 
-      <div className="container mx-auto px-6 py-12 max-w-4xl">
+      <div className="container mx-auto px-6 py-12 max-w-2xl">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="p-3 bg-primary/10 rounded-xl">

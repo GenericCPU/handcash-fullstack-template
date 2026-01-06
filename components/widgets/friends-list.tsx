@@ -1,63 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Users, RefreshCw, ChevronDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-
-interface Friend {
-  id: string
-  handle: string
-  paymail: string
-  displayName: string
-  avatarUrl: string
-  createdAt: Date
-}
+import { useFriends } from "@/hooks/use-friends"
 
 export function FriendsList() {
-  const [friends, setFriends] = useState<Friend[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { friends, isLoading, error, fetchFriends } = useFriends()
   const [isExpanded, setIsExpanded] = useState(false)
-
-  const fetchFriends = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const response = await fetch("/api/friends", {
-        credentials: "include",
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        if (response.status === 403) {
-          setError("FRIENDS permission not granted. Please re-authorize with FRIENDS permission.")
-        } else if (response.status === 401) {
-          setIsLoading(false)
-          return
-        } else {
-          setError(data.error || "Failed to load friends")
-        }
-        setIsLoading(false)
-        return
-      }
-
-      const data = await response.json()
-      setFriends(data.friends || [])
-    } catch (err) {
-      console.error("[v0] Friends fetch error:", err)
-      setError("Failed to load friends")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchFriends()
-  }, [])
 
   const displayedFriends = isExpanded ? friends : friends.slice(0, 5)
   const hasMoreFriends = friends.length > 5
@@ -74,7 +28,7 @@ export function FriendsList() {
             </Badge>
           )}
         </div>
-        <Button variant="ghost" size="sm" onClick={fetchFriends} disabled={isLoading} className="rounded-full">
+        <Button variant="ghost" size="sm" onClick={() => fetchFriends()} disabled={isLoading} className="rounded-full">
           <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
         </Button>
       </div>

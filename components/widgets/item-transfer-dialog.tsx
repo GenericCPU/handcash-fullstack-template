@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Send } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { toast } from "sonner"
 
 interface Item {
   id: string
@@ -59,6 +60,17 @@ export function ItemTransferDialog({ item, open, onOpenChange, onSuccess, apiEnd
         const data = await response.json()
         throw new Error(data.details || data.error || "Transfer failed")
       }
+
+      const data = await response.json()
+      
+      // Count destinations (could be comma-separated string or array)
+      const destinationCount = destination.includes(",") 
+        ? destination.split(",").filter(d => d.trim()).length 
+        : 1
+      
+      toast.success("Transfer successful!", {
+        description: `Successfully transferred ${destinationCount} item${destinationCount > 1 ? 's' : ''} to ${destinationCount} recipient${destinationCount > 1 ? 's' : ''}.`,
+      })
 
       onSuccess()
     } catch (err: any) {

@@ -12,6 +12,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Check if WEBSITE_URL is configured (required for webhooks)
+    const websiteUrl = process.env.WEBSITE_URL
+    if (!websiteUrl || websiteUrl.trim() === "") {
+      return NextResponse.json(
+        {
+          error: "WEBSITE_URL environment variable is not configured",
+          details: `Please set WEBSITE_URL in your environment variables to enable payment webhooks. The webhook URL will be: \${WEBSITE_URL}/api/webhooks/payment`,
+        },
+        { status: 400 }
+      )
+    }
+
     const body = await request.json()
     const {
       amount,

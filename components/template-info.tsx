@@ -158,19 +158,69 @@ export function TemplateInfo() {
               </div>
 
               <div>
-                <h4 className="font-semibold mb-2 text-base">Environment Variables</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-2">
-                  Required environment variables (already configured in this template):
+                <h4 className="font-semibold mb-3 text-base">Environment Variables</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                  Configure these environment variables in your deployment platform (e.g., Vercel):
                 </p>
-                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside ml-2">
-                  <li>
-                    <code className="bg-muted px-1 py-0.5 rounded text-xs">HANDCASH_APP_ID</code> - Your Handcash app ID
-                  </li>
-                  <li>
-                    <code className="bg-muted px-1 py-0.5 rounded text-xs">HANDCASH_APP_SECRET</code> - Your Handcash
-                    app secret
-                  </li>
-                </ul>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <code className="bg-muted px-2 py-1 rounded text-xs font-mono font-semibold">HANDCASH_APP_ID</code>
+                      <Badge variant="destructive" className="text-xs h-4">Required</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-0.5">
+                      Your HandCash application ID from the HandCash Developer Dashboard. Used for OAuth authentication.
+                    </p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <code className="bg-muted px-2 py-1 rounded text-xs font-mono font-semibold">HANDCASH_APP_SECRET</code>
+                      <Badge variant="destructive" className="text-xs h-4">Required</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-0.5">
+                      Your HandCash application secret from the HandCash Developer Dashboard. Used to verify authentication requests.
+                    </p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <code className="bg-muted px-2 py-1 rounded text-xs font-mono font-semibold">WEBSITE_URL</code>
+                      <Badge variant="secondary" className="text-xs h-4">Required for Webhooks</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-0.5">
+                      Your application's public URL (e.g., https://yourdomain.com). Required for payment request webhooks to function. The webhook URL will be: <code className="bg-background px-1 py-0.5 rounded text-xs">{"${WEBSITE_URL}/api/webhooks/payment"}</code>
+                    </p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <code className="bg-muted px-2 py-1 rounded text-xs font-mono font-semibold">ADMIN_HANDLE</code>
+                      <Badge variant="outline" className="text-xs h-4">Optional</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-0.5">
+                      HandCash handle (without $) authorized to access admin features. Used for admin dashboard authentication.
+                    </p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <code className="bg-muted px-2 py-1 rounded text-xs font-mono font-semibold">BUSINESS_AUTH_TOKEN</code>
+                      <Badge variant="outline" className="text-xs h-4">Optional</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-0.5">
+                      Authentication token for business wallet operations. Required only if using business wallet features like business payments or item minting.
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-4 pt-3 border-t">
+                  Get your HandCash credentials from the{" "}
+                  <a
+                    href="https://dashboard.handcash.io"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-medium"
+                  >
+                    HandCash Developer Dashboard
+                  </a>
+                  .
+                </p>
               </div>
 
               <div>

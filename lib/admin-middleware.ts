@@ -36,7 +36,7 @@ export async function requireAdmin(request: NextRequest): Promise<
     const adminHandle = process.env.ADMIN_HANDLE?.toLowerCase().replace("@", "")
 
     if (!adminHandle) {
-      console.error("[v0] ADMIN_HANDLE not configured")
+      console.error("[AdminMiddleware] ADMIN_HANDLE not configured")
       return {
         success: false,
         response: NextResponse.json({ error: "Admin configuration error" }, { status: 500 }),
@@ -57,7 +57,7 @@ export async function requireAdmin(request: NextRequest): Promise<
       handle: userHandle,
     }
   } catch (error) {
-    console.error("[v0] Admin middleware error:", error)
+    console.error("[AdminMiddleware] Admin middleware error:", error)
     return {
       success: false,
       response: NextResponse.json({ error: "Admin authentication failed" }, { status: 500 }),
