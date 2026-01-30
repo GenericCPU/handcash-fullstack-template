@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, User, Shield } from "lucide-react"
 import { LogoutButton } from "@/components/logout-button"
-import { LoginButton } from "@/components/login-button"
+import { DualLoginButtons } from "@/components/dual-login-buttons"
 import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
 
@@ -67,9 +67,11 @@ export function UserProfile({ showAdminBadge = false }: UserProfileProps) {
         </div>
         <h2 className="text-3xl font-bold mb-3">Welcome</h2>
         <p className="text-muted-foreground text-lg mb-8 max-w-sm mx-auto">
-          Connect your Handcash wallet to view your profile
+          Sign in with Google or connect your Handcash wallet to view your profile
         </p>
-        <LoginButton />
+        <div className="flex justify-center">
+          <DualLoginButtons />
+        </div>
       </div>
     )
   }

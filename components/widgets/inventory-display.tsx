@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, Package, RefreshCw, Send, Eye, ChevronDown, ChevronUp, Flame } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { ItemTransferDialog } from "@/components/widgets/item-transfer-dialog"
 import { ItemInspectDialog } from "@/components/widgets/item-inspect-dialog"
@@ -80,9 +79,10 @@ export function InventoryDisplay() {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <Alert variant="destructive" className="rounded-2xl">
-            <AlertDescription className="font-medium">{error}</AlertDescription>
-          </Alert>
+          <div className="text-center py-10 px-4 rounded-2xl bg-muted/50 border border-border">
+            <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+            <p className="text-muted-foreground font-medium">{error}</p>
+          </div>
         ) : items.length === 0 ? (
           <div className="text-center py-16">
             <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />

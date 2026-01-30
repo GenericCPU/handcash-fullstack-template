@@ -46,7 +46,9 @@ export function useInventory() {
           setIsLoading(false)
           return
         }
-        throw new Error("Failed to fetch inventory")
+        setError("Enable inventory permission to use this feature")
+        setIsLoading(false)
+        return
       }
 
       const data = await response.json()
@@ -146,4 +148,5 @@ export function useInventory() {
     refresh: fetchInventory,
   }
 }
+
 

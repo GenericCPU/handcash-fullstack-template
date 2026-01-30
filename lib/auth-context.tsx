@@ -25,6 +25,7 @@ interface AuthContextValue {
   login: () => Promise<void>
   logout: () => Promise<void>
   refreshProfile: () => Promise<void>
+  refetch: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -117,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     logout,
     refreshProfile,
+    refetch: refreshProfile,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -80,3 +80,4 @@ export function validateConfigOrThrow(): void {
 export function isConfigValidated(): boolean {
   return validated
 }
+
