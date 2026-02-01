@@ -4,6 +4,7 @@ import { UserProfile } from "@/components/user-profile"
 import { TemplateInfo } from "@/components/template-info"
 import { LandingContent } from "@/components/landing-content"
 import { AuthenticatedContent } from "@/components/authenticated-content"
+import { WinnersCards } from "@/components/winners-cards"
 import { useAuth } from "@/lib/auth-context"
 import { HeaderBar } from "@/components/header-bar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -98,6 +99,11 @@ export default function HomePage() {
 
             <div className="bg-card rounded-3xl p-8 border border-border">
               <UserProfile />
+            </div>
+
+            {/* Winners cards – visible to everyone */}
+            <div className="bg-card rounded-3xl p-6 border border-border">
+              <WinnersCards />
             </div>
 
             {!isAuthenticated ? (

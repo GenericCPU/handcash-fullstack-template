@@ -151,13 +151,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Transfer logic:
-    // - Single destination: send all items to that destination
-    // - Multiple destinations: send 1 item to each destination (items[0] -> dest[0], items[1] -> dest[1], etc.)
-    const result = await handcashService.transferItems(privateKey, {
-      origins: finalOrigins,
-      destination: finalDestinations,
-    })
+    // Single destination: send all items to that destination.
+    // Multiple destinations: send 1 item to each (origins[i] -> destinations[i]).
+    let result: unknown
+    if (finalDestinations.length === 1) {
+      result = await handcashService.transferItems(privateKey, {
+        origins: finalOrigins,
+        destination: finalDestinations[0],
+      })
+    } else {
+      const transfers = finalDestinations.map((dest, i) => ({
+        origins: [finalOrigins[i]],
+        destination: dest,
+      }))
+      await handcashService.transferItemBatch(privateKey, transfers)
+      result = { batch: true }
+    }
 
     return NextResponse.json({ success: true, transaction: result })
   } catch (error: any) {

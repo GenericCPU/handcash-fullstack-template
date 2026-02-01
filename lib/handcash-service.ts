@@ -1,5 +1,70 @@
+/**
+ * HandCash Service – Single entry point for all HandCash operations.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * RULE: Do not import @handcash/sdk or @handcash/handcash-connect anywhere
+ *       except in this file. API routes and app code must use handcashService
+ *       methods only.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * USE CASES (call these; do not write HandCash code elsewhere):
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ Auth & validation                                                       │
+ * │   validateAuthToken(privateKey)     → boolean                           │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ Profile                                                                  │
+ * │   getUserProfile(privateKey)        → profile                           │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ Friends                                                                  │
+ * │   getFriends(privateKey)            → friends[]                          │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ Payments                                                                │
+ * │   sendPayment(privateKey, { destination, amount, currency?, description? })│
+ * │   getBalance(privateKey)            → { spendableBalances, allBalances } │
+ * │   getExchangeRate(currencyCode?)    → rate (no auth)                     │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ Inventory                                                               │
+ * │   getInventory(privateKey, limit?)   → items[] (grouped)                  │
+ * │   getFullInventory(privateKey)      → items[] (flat, for transfer logic) │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ Item transfer                                                           │
+ * │   resolveHandles(privateKey, handles[]) → Record<handle, userId>          │
+ * │   transferItems(privateKey, { origins, destination })  single destination│
+ * │   transferItemBatch(privateKey, [{ origins, destination }, ...])        │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ Item burn                                                               │
+ * │   burnItem(privateKey, origin)      → void                               │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ Item lock/unlock (advanced)                                             │
+ * │   lockItems(privateKey, itemOrigins[])                                   │
+ * │   unlockItems(privateKey, itemOrigins[])                                  │
+ * │   getLockedItems(privateKey, limit?)                                      │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ Single-item transfer (SDK v3 shape)                                     │
+ * │   transferItem(privateKey, { itemOrigin|itemOrigins, destination })       │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ */
+
 import { getInstance, Connect } from "@handcash/sdk"
-import { HandCashConnect } from "@handcash/handcash-connect"
+import { HandCashConnect, HandCashMinter } from "@handcash/handcash-connect"
+import { resolveHandlesToUserIds } from "@/lib/items-client"
 
 export class HandCashService {
   private appId: string
@@ -14,16 +79,11 @@ export class HandCashService {
     }
   }
 
-  // Get SDK v3 client (newer SDK)
   private getSDKClient(privateKey: string) {
-    const sdk = getInstance({
-      appId: this.appId,
-      appSecret: this.appSecret,
-    })
+    const sdk = getInstance({ appId: this.appId, appSecret: this.appSecret })
     return sdk.getAccountClient(privateKey)
   }
 
-  // Get handcash-connect account (older SDK for features like friends)
   private getConnectAccount(privateKey: string) {
     const handCashConnect = new HandCashConnect({
       appId: this.appId,
@@ -32,41 +92,37 @@ export class HandCashService {
     return handCashConnect.getAccountFromAuthToken(privateKey)
   }
 
-  // Profile operations
+  // ─── Auth & validation ───────────────────────────────────────────────────
+
+  async validateAuthToken(privateKey: string): Promise<boolean> {
+    try {
+      await this.getUserProfile(privateKey)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  // ─── Profile ───────────────────────────────────────────────────────────
+
   async getUserProfile(privateKey: string) {
     const client = this.getSDKClient(privateKey)
     const { data, error } = await Connect.getCurrentUserProfile({ client })
-
     if (error) throw new Error(error.message || "Failed to get user profile")
     return data
   }
 
-  // Friends operations (uses handcash-connect)
+  // ─── Friends ────────────────────────────────────────────────────────────
+
   async getFriends(privateKey: string) {
-    try {
-      console.log("[v0] Getting friends with privateKey:", privateKey?.substring(0, 10) + "...")
-      const account = this.getConnectAccount(privateKey)
-      console.log("[v0] Account object type:", typeof account)
-
-      const result = await account.profile.getFriends()
-      console.log("[v0] getFriends raw result:", JSON.stringify(result, null, 2))
-
-      if (Array.isArray(result)) {
-        console.log("[v0] Result is array, length:", result.length)
-        return result
-      }
-
-      const friends = result?.friends || []
-      console.log("[v0] Friends array:", friends, "Length:", friends.length)
-
-      return friends
-    } catch (error) {
-      console.error("[v0] getFriends error:", error)
-      throw error
-    }
+    const account = this.getConnectAccount(privateKey)
+    const result = await account.profile.getFriends()
+    if (Array.isArray(result)) return result
+    return (result as { friends?: unknown[] })?.friends ?? []
   }
 
-  // Payment operations
+  // ─── Payments ───────────────────────────────────────────────────────────
+
   async sendPayment(
     privateKey: string,
     params: {
@@ -77,172 +133,147 @@ export class HandCashService {
     },
   ) {
     const client = this.getSDKClient(privateKey)
-
     const { data, error } = await Connect.pay({
       client,
       body: {
         instrumentCurrencyCode: params.currency || "BSV",
-        description: params.description || undefined,
-        receivers: [
-          {
-            destination: params.destination,
-            sendAmount: params.amount,
-          },
-        ],
+        description: params.description ?? undefined,
+        receivers: [{ destination: params.destination, sendAmount: params.amount }],
       },
     })
-
     if (error) throw new Error(error.message || "Payment failed")
     return data
   }
 
   async getBalance(privateKey: string) {
     const client = this.getSDKClient(privateKey)
-
-    const { data: spendableBalances, error: spendableError } = await Connect.getSpendableBalances({
-      client,
-    })
-
+    const { data: spendableBalances, error: spendableError } = await Connect.getSpendableBalances({ client })
     if (spendableError) throw new Error(spendableError.message || "Failed to get spendable balance")
 
-    const { data: allBalances, error: allBalancesError } = await Connect.getBalances({
-      client,
-    })
-
+    const { data: allBalances, error: allBalancesError } = await Connect.getBalances({ client })
     if (allBalancesError) {
-      console.warn("[v0] All balances error:", allBalancesError)
+      // Non-fatal; return what we have
     }
-
-    return {
-      spendableBalances: spendableBalances || {},
-      allBalances: allBalances || {},
-    }
+    return { spendableBalances: spendableBalances ?? {}, allBalances: allBalances ?? {} }
   }
 
   async getExchangeRate(currencyCode = "USD") {
-    const sdk = getInstance({
-      appId: this.appId,
-      appSecret: this.appSecret,
-    })
-
+    const sdk = getInstance({ appId: this.appId, appSecret: this.appSecret })
     const { data: rate, error } = await Connect.getExchangeRate({
       client: sdk.client,
-      path: {
-        currencyCode,
-      },
+      path: { currencyCode },
     })
-
     if (error) throw new Error(error.message || "Failed to get exchange rate")
     return rate
   }
 
+  // ─── Inventory ───────────────────────────────────────────────────────────
+
   async getInventory(privateKey: string, limit = 100) {
     const client = this.getSDKClient(privateKey)
-    const { data: items, error } = await Connect.getItemsInventory({
-      client,
-    })
-
+    const { data: items, error } = await Connect.getItemsInventory({ client })
     if (error) throw new Error(error.message || "Failed to get inventory")
-
-    // HandCash API returns {items: [...]} so we need to extract the array
-    return items?.items || []
+    return items?.items ?? []
   }
 
-  // Item operations (uses SDK v3)
+  /** Flat item list for transfer/grouping logic; same API as getInventory for now. */
+  async getFullInventory(privateKey: string) {
+    return this.getInventory(privateKey, 500)
+  }
+
+  // ─── Resolve handles (for transfers) ─────────────────────────────────────
+
+  /** Resolve handles to user IDs. Returns map: lowercaseHandle -> userId. */
+  async resolveHandles(privateKey: string, handles: string[]): Promise<Record<string, string>> {
+    return resolveHandlesToUserIds(handles, privateKey)
+  }
+
+  // ─── Item transfer ──────────────────────────────────────────────────────
+
+  /** Send multiple origins to a single destination. */
+  async transferItems(
+    privateKey: string,
+    params: { origins: string[]; destination: string },
+  ) {
+    const account = this.getConnectAccount(privateKey)
+    return account.items.transfer({
+      destinationsWithOrigins: [{ origins: params.origins, destination: params.destination }],
+    })
+  }
+
+  /** Send multiple (origins, destination) pairs in one go. */
+  async transferItemBatch(
+    privateKey: string,
+    transfers: Array<{ origins: string[]; destination: string }>,
+  ) {
+    if (transfers.length === 0) return
+    const account = this.getConnectAccount(privateKey)
+    const destinationsWithOrigins = transfers.map((t) => ({
+      origins: t.origins,
+      destination: t.destination,
+    }))
+    await account.items.transfer({ destinationsWithOrigins })
+  }
+
+  /** Single transfer with SDK v3 shape (itemOrigin or itemOrigins + destination). */
   async transferItem(
     privateKey: string,
-    params: {
-      itemOrigin: string | string[]
-      destination: string
-    },
+    params: { itemOrigin: string | string[]; destination: string },
   ) {
     const client = this.getSDKClient(privateKey)
-
-    const body = Array.isArray(params.itemOrigin)
-      ? { itemOrigins: params.itemOrigin, destination: params.destination }
-      : { itemOrigin: params.itemOrigin, destination: params.destination }
-
-    const { data, error } = await Connect.transferItem({
-      client,
-      body,
-    })
-
+    const body =
+      Array.isArray(params.itemOrigin)
+        ? { itemOrigins: params.itemOrigin, destination: params.destination }
+        : { itemOrigin: params.itemOrigin, destination: params.destination }
+    const { data, error } = await Connect.transferItem({ client, body })
     if (error) throw new Error(error.message || "Failed to transfer item")
     return data
   }
 
+  // ─── Item burn ───────────────────────────────────────────────────────────
+
+  async burnItem(privateKey: string, origin: string) {
+    const minter = HandCashMinter.fromAppCredentials({
+      appId: this.appId,
+      appSecret: this.appSecret,
+      authToken: privateKey,
+    })
+    const burnOrder = await minter.burnAndCreateItemsOrder({ burn: { origins: [origin] } })
+    const orderId = (burnOrder as { itemCreationOrder?: { id?: string }; id?: string })?.itemCreationOrder?.id ?? (burnOrder as { id?: string })?.id
+    if (orderId) {
+      try {
+        await minter.getOrderItems(orderId)
+      } catch {
+        // Burn may still have succeeded
+      }
+    }
+  }
+
+  // ─── Lock / unlock (advanced) ─────────────────────────────────────────────
+
   async lockItems(privateKey: string, itemOrigins: string[]) {
     const client = this.getSDKClient(privateKey)
-
-    const { data, error } = await Connect.lockItems({
-      client,
-      body: { itemOrigins },
-    })
-
+    const { data, error } = await Connect.lockItems({ client, body: { itemOrigins } })
     if (error) throw new Error(error.message || "Failed to lock items")
     return data
   }
 
   async unlockItems(privateKey: string, itemOrigins: string[]) {
     const client = this.getSDKClient(privateKey)
-
-    const { data, error } = await Connect.unlockItems({
-      client,
-      body: { itemOrigins },
-    })
-
+    const { data, error } = await Connect.unlockItems({ client, body: { itemOrigins } })
     if (error) throw new Error(error.message || "Failed to unlock items")
     return data
   }
 
   async getLockedItems(privateKey: string, limit = 100) {
     const client = this.getSDKClient(privateKey)
-
     const { data, error } = await Connect.getLockedItems({
       client,
-      body: {
-        from: 0,
-        to: limit,
-        fetchAttributes: true,
-      },
+      body: { from: 0, to: limit, fetchAttributes: true },
     })
-
     if (error) throw new Error(error.message || "Failed to get locked items")
     return data
   }
-
-  // Item operations (uses handcash-connect)
-  async transferItems(
-    privateKey: string,
-    params: {
-      origins: string[]
-      destination: string
-    },
-  ) {
-    const account = this.getConnectAccount(privateKey)
-
-    const result = await account.items.transfer({
-      destinationsWithOrigins: [
-        {
-          origins: params.origins,
-          destination: params.destination,
-        },
-      ],
-    })
-
-    return result
-  }
-
-  // Validation
-  async validateAuthToken(privateKey: string): Promise<boolean> {
-    try {
-      await this.getUserProfile(privateKey)
-      return true
-    } catch {
-      return false
-    }
-  }
 }
 
-// Export singleton instance
 export const handcashService = new HandCashService()
