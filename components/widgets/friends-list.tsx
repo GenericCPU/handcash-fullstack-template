@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Users, RefreshCw, ChevronDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useFriends } from "@/hooks/use-friends"
@@ -38,9 +37,10 @@ export function FriendsList() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : error ? (
-        <Alert variant="destructive" className="rounded-2xl">
-          <AlertDescription className="font-medium">{error}</AlertDescription>
-        </Alert>
+        <div className="flex flex-col items-center justify-center py-12 px-4">
+          <Users className="w-14 h-14 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground text-center text-base">Enable friends permission to see this</p>
+        </div>
       ) : friends.length === 0 ? (
         <p className="text-muted-foreground text-center py-12 text-lg">No friends found</p>
       ) : (

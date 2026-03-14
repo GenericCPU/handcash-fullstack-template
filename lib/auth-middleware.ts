@@ -42,17 +42,7 @@ export async function requireAuth(request: NextRequest): Promise<
     }
 
     if (!privateKey) {
-      const forwardedFor = request.headers.get("x-forwarded-for")
-      const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : null
-      const userAgent = request.headers.get("user-agent") || request.headers.get("x-forwarded-user-agent")
-
-      logAuditEvent({
-        type: AuditEventType.PROFILE_ACCESS,
-        success: false,
-        ipAddress,
-        userAgent,
-        details: { reason: "No auth token provided" },
-      })
+      // No token is normal for unauthenticated visitors; don't audit (avoids noise on every page load)
       return {
         success: false,
         response: NextResponse.json({ error: "Not authenticated" }, { status: 401 }),

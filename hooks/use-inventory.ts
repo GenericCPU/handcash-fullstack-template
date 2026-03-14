@@ -55,7 +55,7 @@ export function useInventory() {
       setItems(data.items || [])
     } catch (err: any) {
       console.error("[useInventory] Fetch error:", err)
-      setError(err.message || "Failed to load inventory")
+      setError("Enable inventory permission to use this feature")
     } finally {
       setIsLoading(false)
     }

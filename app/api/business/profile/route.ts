@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
   try {
     const businessAuthToken = process.env.BUSINESS_AUTH_TOKEN
     if (!businessAuthToken) {
-      return NextResponse.json({ error: "BUSINESS_AUTH_TOKEN not configured" }, { status: 500 })
+      // Business key is optional; return empty profile so header/landing can use default logo
+      return NextResponse.json({ publicProfile: null })
     }
 
     const client = getBusinessClient()

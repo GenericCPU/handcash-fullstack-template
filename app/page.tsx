@@ -4,18 +4,18 @@ import { UserProfile } from "@/components/user-profile"
 import { TemplateInfo } from "@/components/template-info"
 import { LandingContent } from "@/components/landing-content"
 import { AuthenticatedContent } from "@/components/authenticated-content"
-import { WinnersCards } from "@/components/winners-cards"
 import { useAuth } from "@/lib/auth-context"
 import { HeaderBar } from "@/components/header-bar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 
 function PageLoadingSkeleton() {
   return (
-    <div className="container mx-auto px-6 py-12 max-w-2xl space-y-6">
+    <div className="container mx-auto px-6 py-6 max-w-2xl space-y-6">
       {/* Hero skeleton */}
-      <div className="text-center mb-16 pt-8">
+      <div className="text-center mb-6 pt-2">
         <div className="inline-flex p-6 bg-muted/50 rounded-3xl mb-6">
           <div className="w-24 h-24 rounded-2xl bg-muted animate-pulse" />
         </div>
@@ -48,8 +48,19 @@ function PageLoadingSkeleton() {
 }
 
 export default function HomePage() {
+  const searchParams = useSearchParams()
   const { isAuthenticated, isLoading } = useAuth()
   const [configStatus, setConfigStatus] = useState<{ hasAppId: boolean; hasAppSecret: boolean; isConfigured: boolean } | null>(null)
+
+  // If HandCash redirected to root with OAuth params, send to API callback to complete login
+  useEffect(() => {
+    const state = searchParams.get("state")
+    if (state) {
+      const query = searchParams.toString()
+      window.location.replace(`/api/auth/callback?${query}`)
+      return
+    }
+  }, [searchParams])
 
   useEffect(() => {
     const checkConfig = async () => {
@@ -75,7 +86,7 @@ export default function HomePage() {
       {isLoading ? (
         <PageLoadingSkeleton />
       ) : (
-        <div className="container mx-auto px-6 py-12 max-w-2xl">
+        <div className="container mx-auto px-6 py-6 max-w-2xl">
           <LandingContent />
 
           <div className="space-y-6">
@@ -99,11 +110,6 @@ export default function HomePage() {
 
             <div className="bg-card rounded-3xl p-8 border border-border">
               <UserProfile />
-            </div>
-
-            {/* Winners cards – visible to everyone */}
-            <div className="bg-card rounded-3xl p-6 border border-border">
-              <WinnersCards />
             </div>
 
             {!isAuthenticated ? (

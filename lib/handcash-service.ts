@@ -12,6 +12,7 @@
  * ┌─────────────────────────────────────────────────────────────────────────┐
  * │ Auth & validation                                                       │
  * │   validateAuthToken(privateKey)     → boolean                           │
+ * │   getPermissions(privateKey)        → { profile, pay, friends, inventory }│
  * └─────────────────────────────────────────────────────────────────────────┘
  *
  * ┌─────────────────────────────────────────────────────────────────────────┐
@@ -101,6 +102,38 @@ export class HandCashService {
     } catch {
       return false
     }
+  }
+
+  /**
+   * Probe which HandCash permissions the user has granted. Profile is true if the token is valid.
+   * Pay, friends, and inventory are detected by calling each API; absence or error means not granted.
+   */
+  async getPermissions(privateKey: string): Promise<{
+    profile: boolean
+    pay: boolean
+    friends: boolean
+    inventory: boolean
+  }> {
+    const result = { profile: false, pay: false, friends: false, inventory: false }
+
+    try {
+      await this.getUserProfile(privateKey)
+      result.profile = true
+    } catch {
+      return result
+    }
+
+    const [payOk, friendsOk, inventoryOk] = await Promise.all([
+      this.getBalance(privateKey).then(() => true).catch(() => false),
+      this.getFriends(privateKey).then((f) => Array.isArray(f)).catch(() => false),
+      this.getInventory(privateKey, 1).then(() => true).catch(() => false),
+    ])
+
+    result.pay = payOk
+    result.friends = friendsOk
+    result.inventory = inventoryOk
+
+    return result
   }
 
   // ─── Profile ───────────────────────────────────────────────────────────

@@ -50,7 +50,7 @@ export function usePayments() {
       })
 
       if (!response.ok) {
-        // Not authenticated or error
+        setError("Enable pay permission to use this feature")
         setIsLoadingBalance(false)
         return
       }
@@ -59,7 +59,7 @@ export function usePayments() {
       setBalance(data)
     } catch (err) {
       console.error("[usePayments] Balance fetch error:", err)
-      setError("Failed to load balance")
+      setError("Enable pay permission to use this feature")
     } finally {
       setIsLoadingBalance(false)
     }

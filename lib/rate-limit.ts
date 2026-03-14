@@ -1,16 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { getClientIp } from "@/lib/request-utils"
 
 /**
  * In-memory rate limit storage
- * 
+ *
  * ⚠️ IMPORTANT: This implementation uses in-memory storage and is NOT suitable for
  * multi-instance deployments. Each server instance maintains its own rate limit counter,
  * meaning rate limits are effectively multiplied by the number of instances.
- * 
+ *
  * For production multi-instance deployments, use Redis-based rate limiting:
  * - Consider @upstash/ratelimit (serverless-compatible)
  * - Or implement Redis-based solution
- * 
+ *
  * TODO: Add Redis-based rate limiting for production deployments
  */
 interface RateLimitEntry {
@@ -36,15 +37,8 @@ setInterval(() => {
  * Get client identifier for rate limiting
  */
 function getClientId(request: NextRequest, identifier?: string): string {
-  // If custom identifier provided (e.g., session ID), use it
-  if (identifier) {
-    return identifier
-  }
-
-  // Otherwise use IP address
-  const forwardedFor = request.headers.get("x-forwarded-for")
-  const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "unknown"
-  return ip
+  if (identifier) return identifier
+  return getClientIp(request) ?? "unknown"
 }
 
 /**

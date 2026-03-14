@@ -24,14 +24,14 @@ export function AuthenticatedContent() {
         ═══════════════════════════════════════════════════════════════
       */}
 
-      {/* Widget: Friends List - Shows user's HandCash friends */}
-      <FriendsList />
-
       {/* Widget: Digital Items Inventory - Displays and transfers items */}
       <InventoryDisplay />
 
       {/* Widget: Payment Interface - Send BSV payments */}
       <PaymentInterface />
+
+      {/* Widget: Friends List - Shows user's HandCash friends (requires Friends scope in HandCash app) */}
+      <FriendsList />
 
       {/* 
         ═══════════════════════════════════════════════════════════════

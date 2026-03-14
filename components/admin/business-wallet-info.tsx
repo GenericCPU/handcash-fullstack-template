@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, Building2, Copy, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-interface BusinessProfile {
+export interface BusinessProfile {
   publicProfile: {
     id: string
     handle: string
@@ -17,13 +17,25 @@ interface BusinessProfile {
   }
 }
 
-export function BusinessWalletInfo() {
-  const [profile, setProfile] = useState<BusinessProfile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+interface BusinessWalletInfoProps {
+  /** When true, render only inner content (no Card). Used inside BusinessWalletSection. */
+  embedded?: boolean
+  /** When provided with embedded, skip fetch and render profile block only. */
+  initialProfile?: BusinessProfile | null
+}
+
+export function BusinessWalletInfo({ embedded = false, initialProfile }: BusinessWalletInfoProps = {}) {
+  const [profile, setProfile] = useState<BusinessProfile | null>(initialProfile ?? null)
+  const [isLoading, setIsLoading] = useState(!initialProfile)
   const [error, setError] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
   useEffect(() => {
+    if (initialProfile) {
+      setProfile(initialProfile)
+      setIsLoading(false)
+      return
+    }
     const fetchBusinessProfile = async () => {
       try {
         const response = await fetch("/api/admin/business/profile", {
@@ -54,7 +66,7 @@ export function BusinessWalletInfo() {
     }
 
     fetchBusinessProfile()
-  }, [])
+  }, [initialProfile])
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -64,6 +76,42 @@ export function BusinessWalletInfo() {
     } catch (err) {
       console.error("Failed to copy:", err)
     }
+  }
+
+  const profileBlock = profile && (
+    <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-2xl border border-dashed border-border">
+      <Avatar className="w-12 h-12">
+        <AvatarImage src={profile.publicProfile.avatarUrl || "/placeholder.svg"} alt={profile.publicProfile.displayName} />
+        <AvatarFallback>{profile.publicProfile.displayName?.charAt(0).toUpperCase() || "B"}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex items-center gap-2">
+          <h4 className="font-semibold truncate">{profile.publicProfile.displayName}</h4>
+          <Badge variant="secondary" className="shrink-0 text-xs">
+            <Building2 className="w-3 h-3 mr-1" />
+            Business
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">${profile.publicProfile.handle}</p>
+        {profile.publicProfile.id && (
+          <div className="flex items-center gap-1 mt-2">
+            <span className="text-xs text-muted-foreground font-mono truncate">ID: {profile.publicProfile.id}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 shrink-0"
+              onClick={() => copyToClipboard(profile.publicProfile.id, "id")}
+            >
+              {copiedField === "id" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  if (embedded && initialProfile) {
+    return profileBlock
   }
 
   if (isLoading) {
@@ -78,8 +126,15 @@ export function BusinessWalletInfo() {
 
   if (error || !profile) {
     return (
-      <Card className="p-4 bg-muted/50">
-        <div className="text-center py-2 text-muted-foreground text-sm">{error || "Business wallet not available"}</div>
+      <Card className="p-6 rounded-3xl border-border">
+        <div className="flex items-center gap-2 mb-6">
+          <Building2 className="w-6 h-6 text-primary" />
+          <h3 className="text-xl font-bold">Business Wallet</h3>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 px-4">
+          <Building2 className="w-14 h-14 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground text-center text-base">Enable business wallet to use this feature</p>
+        </div>
       </Card>
     )
   }
@@ -95,7 +150,6 @@ export function BusinessWalletInfo() {
           <AvatarImage src={profile.publicProfile.avatarUrl || "/placeholder.svg"} alt={profile.publicProfile.displayName} />
           <AvatarFallback>{profile.publicProfile.displayName?.charAt(0).toUpperCase() || "B"}</AvatarFallback>
         </Avatar>
-
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center gap-2">
             <h4 className="font-semibold truncate">{profile.publicProfile.displayName}</h4>
@@ -105,7 +159,6 @@ export function BusinessWalletInfo() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">${profile.publicProfile.handle}</p>
-
           {profile.publicProfile.id && (
             <div className="flex items-center gap-1 mt-2">
               <span className="text-xs text-muted-foreground font-mono truncate">ID: {profile.publicProfile.id}</span>

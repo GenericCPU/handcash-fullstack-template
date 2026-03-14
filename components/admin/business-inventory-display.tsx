@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, Package, RefreshCw, Send, Eye, ChevronDown, ChevronUp, Flame } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { ItemTransferDialog } from "@/components/widgets/item-transfer-dialog"
@@ -39,7 +38,12 @@ interface InventoryItem {
   }>
 }
 
-export function BusinessInventoryDisplay() {
+interface BusinessInventoryDisplayProps {
+  /** When true, render without outer Card (for use inside BusinessWalletSection). */
+  embedded?: boolean
+}
+
+export function BusinessInventoryDisplay({ embedded = false }: BusinessInventoryDisplayProps = {}) {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -157,27 +161,29 @@ export function BusinessInventoryDisplay() {
     fetchCollections()
   }, [])
 
-  return (
-    <>
-      <Card className="p-6 rounded-3xl border-border">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Package className="w-6 h-6 text-primary" />
-            <h3 className="text-xl font-bold">Business Wallet Inventory</h3>
-          </div>
-          <Button variant="ghost" size="sm" onClick={fetchInventory} disabled={isLoading} className="rounded-full">
-            <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
-          </Button>
-        </div>
+  const header = (
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <Package className="w-5 h-5 text-primary" />
+        <h3 className={embedded ? "text-lg font-semibold" : "text-xl font-bold"}>Business Wallet Inventory</h3>
+      </div>
+      <Button variant="ghost" size="sm" onClick={fetchInventory} disabled={isLoading} className="rounded-full">
+        <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
+      </Button>
+    </div>
+  )
 
-        {isLoading ? (
+  const body = (
+    <>
+      {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <Alert variant="destructive" className="rounded-2xl">
-            <AlertDescription className="font-medium">{error}</AlertDescription>
-          </Alert>
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <Package className="w-14 h-14 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center text-base">Enable business wallet to use this feature</p>
+          </div>
         ) : items.length === 0 ? (
           <div className="text-center py-12">
             <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -299,8 +305,69 @@ export function BusinessInventoryDisplay() {
             )}
           </>
         )}
-      </Card>
+    </>
+  )
 
+  if (embedded) {
+    return (
+      <>
+        <div className="space-y-4">
+          {header}
+          {body}
+        </div>
+        {selectedItem && (
+          <ItemTransferDialog
+            item={selectedItem}
+            open={isTransferOpen}
+            onOpenChange={setIsTransferOpen}
+            onSuccess={handleTransferSuccess}
+            apiEndpoint="/api/admin/items/transfer"
+          />
+        )}
+        {inspectItem && (
+          <ItemInspectDialog
+            item={inspectItem}
+            open={isInspectOpen}
+            onOpenChange={setIsInspectOpen}
+            collections={collections}
+          />
+        )}
+        <AlertDialog open={isBurnDialogOpen} onOpenChange={setIsBurnDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to burn this item?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. The item "{burnItem?.name}" will be permanently destroyed.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isBurning}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleBurnConfirm} disabled={isBurning} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {isBurning ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Burning...
+                  </>
+                ) : (
+                  <>
+                    <Flame className="w-4 h-4 mr-2" />
+                    Burn Item
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <Card className="p-6 rounded-3xl border-border">
+        {header}
+        {body}
+      </Card>
       {selectedItem && (
         <ItemTransferDialog
           item={selectedItem}
@@ -310,7 +377,6 @@ export function BusinessInventoryDisplay() {
           apiEndpoint="/api/admin/items/transfer"
         />
       )}
-
       {inspectItem && (
         <ItemInspectDialog
           item={inspectItem}
@@ -319,7 +385,6 @@ export function BusinessInventoryDisplay() {
           collections={collections}
         />
       )}
-
       <AlertDialog open={isBurnDialogOpen} onOpenChange={setIsBurnDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

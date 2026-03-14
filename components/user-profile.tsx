@@ -1,6 +1,8 @@
 "use client"
+import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Loader2, User, Shield } from "lucide-react"
 import { LogoutButton } from "@/components/logout-button"
 import { DualLoginButtons } from "@/components/dual-login-buttons"
@@ -25,7 +27,7 @@ export function UserProfile({ showAdminBadge = false }: UserProfileProps) {
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    if (showAdminBadge && user) {
+    if (user) {
       const checkAdminStatus = async () => {
         try {
           const response = await fetch("/api/admin/status", {
@@ -41,7 +43,7 @@ export function UserProfile({ showAdminBadge = false }: UserProfileProps) {
       }
       checkAdminStatus()
     }
-  }, [showAdminBadge, user])
+  }, [user])
 
   if (isLoading) {
     return (
@@ -97,6 +99,13 @@ export function UserProfile({ showAdminBadge = false }: UserProfileProps) {
                 <Shield className="w-3 h-3 mr-1" />
                 Admin
               </Badge>
+            )}
+            {!showAdminBadge && isAdmin && (
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full shrink-0" asChild title="Admin">
+                <Link href="/admin">
+                  <Shield className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                </Link>
+              </Button>
             )}
           </div>
           <p className="text-muted-foreground text-lg mb-1">${user.publicProfile.handle}</p>

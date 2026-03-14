@@ -59,6 +59,7 @@ export interface MintInterfaceRef {
 export const MintInterface = forwardRef<MintInterfaceRef, {}>(function MintInterface(props, ref) {
   const [collections, setCollections] = useState<Collection[]>([])
   const [isLoadingCollections, setIsLoadingCollections] = useState(true)
+  const [businessWalletRequired, setBusinessWalletRequired] = useState(false)
   const [isMinting, setIsMinting] = useState(false)
   const [isCreatingCollection, setIsCreatingCollection] = useState(false)
   const [isUpdatingCollection, setIsUpdatingCollection] = useState(false)
@@ -124,20 +125,25 @@ export const MintInterface = forwardRef<MintInterfaceRef, {}>(function MintInter
 
   const fetchCollections = async () => {
     setIsLoadingCollections(true)
+    setBusinessWalletRequired(false)
     try {
       const response = await fetch("/api/admin/collections", {
         credentials: "include",
       })
 
       if (!response.ok) {
-        throw new Error("Failed to fetch collections")
+        setBusinessWalletRequired(true)
+        setCollections([])
+        setIsLoadingCollections(false)
+        return
       }
 
       const data = await response.json()
       setCollections(data.collections || [])
     } catch (err: any) {
       console.error("[v0] Collections fetch error:", err)
-      setError("Failed to load collections")
+      setBusinessWalletRequired(true)
+      setCollections([])
     } finally {
       setIsLoadingCollections(false)
     }
@@ -505,6 +511,12 @@ export const MintInterface = forwardRef<MintInterfaceRef, {}>(function MintInter
           <h3 className="text-lg font-semibold">Mint & Collections</h3>
         </div>
 
+        {businessWalletRequired ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <Sparkles className="w-14 h-14 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center text-base">Enable business wallet to use this feature</p>
+          </div>
+        ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="mint">Mint Items</TabsTrigger>
@@ -967,6 +979,7 @@ export const MintInterface = forwardRef<MintInterfaceRef, {}>(function MintInter
             </div>
           </TabsContent>
         </Tabs>
+        )}
       </Card>
 
       {/* Edit Collection Dialog */}

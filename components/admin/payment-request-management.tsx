@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Loader2, Plus, QrCode, Copy, ExternalLink, Receipt, CheckCircle2, XCircle, ChevronDown } from "lucide-react"
+import { Loader2, Plus, QrCode, Copy, ExternalLink, Receipt, CheckCircle2, XCircle, ChevronDown, Globe } from "lucide-react"
 
 interface CreatedPaymentRequest {
   id: string
@@ -367,23 +367,13 @@ export function PaymentRequestManagement() {
           </div>
         </div>
 
-        {/* Webhook Configuration Notice */}
-        {!websiteUrlConfigured && (
-          <Alert variant="destructive" className="mb-4 rounded-2xl border-border">
-            <XCircle className="w-4 h-4" />
-            <AlertDescription className="text-xs md:text-sm">
-              <strong>WEBSITE_URL not configured:</strong> Payment requests cannot be created and webhooks will not work
-              until you set the <code className="bg-background px-1 py-0.5 rounded">WEBSITE_URL</code> environment
-              variable. Once configured, set the webhook URL in your HandCash dashboard to:{" "}
-              {webhookUrl ? (
-                <code className="bg-background px-1 py-0.5 rounded break-all">{webhookUrl}</code>
-              ) : (
-                <code className="bg-background px-1 py-0.5 rounded">{"${WEBSITE_URL}/api/webhooks/payment"}</code>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
-
+        {!websiteUrlConfigured ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <Globe className="w-14 h-14 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center text-base">Enable website URL to use this feature</p>
+          </div>
+        ) : (
+        <>
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogContent className="max-w-[95vw] md:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -395,24 +385,6 @@ export function PaymentRequestManagement() {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreatePaymentRequest} className="space-y-4">
-                {!websiteUrlConfigured && (
-                  <Alert variant="destructive" className="mb-4">
-                    <XCircle className="w-4 h-4" />
-                    <AlertDescription className="text-xs md:text-sm">
-                      <strong>WEBSITE_URL not configured.</strong> Payment requests cannot be created until you set the{" "}
-                      <code className="bg-background px-1 py-0.5 rounded">WEBSITE_URL</code> environment variable. This
-                      is required for payment webhooks to work.
-                      {webhookUrl && (
-                        <>
-                          {" "}
-                          Configure the webhook URL in your HandCash dashboard:{" "}
-                          <code className="bg-background px-1 py-0.5 rounded break-all">{webhookUrl}</code>
-                        </>
-                      )}
-                    </AlertDescription>
-                  </Alert>
-                )}
-
                 <div className="grid grid-cols-2 gap-3 md:gap-4">
                   <div className="space-y-1.5 md:space-y-2">
                     <Label htmlFor="amount" className="text-xs md:text-sm">
@@ -670,6 +642,8 @@ export function PaymentRequestManagement() {
               Create Payment Request
             </Button>
           </div>
+        )}
+        </>
         )}
       </Card>
 

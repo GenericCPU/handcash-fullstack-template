@@ -79,9 +79,9 @@ export function InventoryDisplay() {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <div className="text-center py-10 px-4 rounded-2xl bg-muted/50 border border-border">
-            <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-            <p className="text-muted-foreground font-medium">{error}</p>
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <Package className="w-14 h-14 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center text-base">Enable inventory permission to use this feature</p>
           </div>
         ) : items.length === 0 ? (
           <div className="text-center py-16">

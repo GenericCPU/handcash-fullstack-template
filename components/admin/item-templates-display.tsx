@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, RefreshCw, Sparkles, FileText, Copy } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { ItemTemplateMintDialog } from "@/components/admin/item-template-mint-dialog"
 import { ItemTemplateCreateDialog } from "@/components/admin/item-template-create-dialog"
@@ -78,7 +77,7 @@ export function ItemTemplatesDisplay() {
       setTemplates(data.templates || [])
     } catch (err: any) {
       console.error("[v0] Item templates fetch error:", err)
-      setError(err.message || "Failed to load item templates")
+      setError("Enable business wallet to use this feature")
     } finally {
       setIsLoading(false)
     }
@@ -170,9 +169,10 @@ export function ItemTemplatesDisplay() {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <Alert variant="destructive" className="rounded-2xl">
-            <AlertDescription className="font-medium">{error}</AlertDescription>
-          </Alert>
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <Sparkles className="w-14 h-14 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center text-base">Enable business wallet to use this feature</p>
+          </div>
         ) : templates.length === 0 ? (
           <div className="text-center py-12">
             <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />

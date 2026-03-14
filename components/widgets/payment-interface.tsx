@@ -59,6 +59,11 @@ export function PaymentInterface() {
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
+        ) : error && !balance ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <Wallet className="w-14 h-14 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center text-base">Enable pay permission to use this feature</p>
+          </div>
         ) : balance ? (
           <div className="space-y-4">
             {balance.spendableBalances?.items && balance.spendableBalances.items.length > 0 && (
@@ -126,6 +131,12 @@ export function PaymentInterface() {
           <h3 className="text-xl font-bold">Send Payment</h3>
         </div>
 
+        {error && !balance ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <Send className="w-14 h-14 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center text-base">Enable pay permission to use this feature</p>
+          </div>
+        ) : (
         <form onSubmit={handleSendPayment} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="destination" className="font-semibold">
@@ -229,7 +240,7 @@ export function PaymentInterface() {
             )}
           </Button>
         </form>
-
+        )}
       </Card>
     </div>
   )

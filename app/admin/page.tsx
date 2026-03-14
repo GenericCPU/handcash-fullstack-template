@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import { LoadingScreen } from "@/components/loading-screen"
 import AdminDashboard from "@/components/admin/admin-dashboard"
 
 export default function AdminPage() {
@@ -34,11 +34,7 @@ export default function AdminPage() {
   }, [router])
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    )
+    return <LoadingScreen />
   }
 
   if (!isAuthorized) {

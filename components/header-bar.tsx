@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
+import { useTheme } from "next-themes"
 import { useAuth } from "@/lib/auth-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Rocket, LogOut, Shield } from "lucide-react"
+import { Rocket, LogOut, Shield, Monitor, Sun, Moon } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 
@@ -25,6 +28,7 @@ interface BusinessProfile {
 export function HeaderBar() {
   const router = useRouter()
   const pathname = usePathname()
+  const { theme, setTheme } = useTheme()
   const { user, isAuthenticated, isLoading, logout } = useAuth()
   const [businessAvatar, setBusinessAvatar] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -106,13 +110,15 @@ export function HeaderBar() {
                 </div>
               </Link>
 
-              <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 sm:gap-1 bg-muted/40 rounded-full p-0.5 sm:p-1">
+              <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 sm:gap-1 bg-gray-200/80 dark:bg-zinc-800/90 rounded-full p-0.5 sm:p-1">
                 <Button
                   variant={isActive("/") ? "secondary" : "ghost"}
                   size="sm"
                   asChild
                   className={`rounded-full h-8 sm:h-9 px-2.5 sm:px-4 text-xs sm:text-sm transition-all ${
-                    isActive("/") ? "bg-background shadow-sm" : "hover:bg-background/50"
+                    isActive("/")
+                      ? "bg-gray-100 dark:bg-zinc-700 shadow-sm text-foreground hover:bg-gray-100 dark:hover:bg-zinc-700"
+                      : "hover:bg-gray-100/90 dark:hover:bg-zinc-700/80 text-foreground"
                   }`}
                 >
                   <Link href="/" className="gap-1.5 sm:gap-2">
@@ -120,21 +126,6 @@ export function HeaderBar() {
                     <span className="hidden sm:inline">Home</span>
                   </Link>
                 </Button>
-                {isMounted && isAdmin && (
-                  <Button
-                    variant={isActive("/admin") ? "secondary" : "ghost"}
-                    size="sm"
-                    asChild
-                    className={`rounded-full h-8 sm:h-9 px-2.5 sm:px-4 text-xs sm:text-sm transition-all ${
-                      isActive("/admin") ? "bg-background shadow-sm" : "hover:bg-background/50"
-                    }`}
-                  >
-                    <Link href="/admin" className="gap-1.5 sm:gap-2">
-                      <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Admin</span>
-                    </Link>
-                  </Button>
-                )}
               </nav>
 
               <DropdownMenu>
@@ -166,6 +157,22 @@ export function HeaderBar() {
                       <p className="text-xs leading-none text-muted-foreground">${user.publicProfile.handle}</p>
                     </div>
                   </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-muted-foreground font-normal">Theme</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={theme ?? "system"} onValueChange={(v) => setTheme(v)}>
+                    <DropdownMenuRadioItem value="system">
+                      <Monitor className="mr-2 h-4 w-4" />
+                      System
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="light">
+                      <Sun className="mr-2 h-4 w-4" />
+                      Light
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="dark">
+                      <Moon className="mr-2 h-4 w-4" />
+                      Dark
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
                   <DropdownMenuSeparator />
                   {isMounted && isAdmin && (
                     <DropdownMenuItem

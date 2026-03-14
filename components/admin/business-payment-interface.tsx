@@ -56,6 +56,7 @@ export function BusinessPaymentInterface() {
       })
 
       if (!response.ok) {
+        setError("Enable business wallet to use this feature")
         setIsLoadingBalance(false)
         return
       }
@@ -64,7 +65,7 @@ export function BusinessPaymentInterface() {
       setBalance(data)
     } catch (err) {
       console.error("[v0] Business balance fetch error:", err)
-      setError("Failed to load business wallet balance")
+      setError("Enable business wallet to use this feature")
     } finally {
       setIsLoadingBalance(false)
     }
@@ -131,6 +132,11 @@ export function BusinessPaymentInterface() {
         {isLoadingBalance ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : error && !balance ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <Wallet className="w-14 h-14 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center text-base">Enable business wallet to use this feature</p>
           </div>
         ) : balance ? (
           <div className="space-y-4">
@@ -199,6 +205,12 @@ export function BusinessPaymentInterface() {
           <h3 className="text-xl font-bold">Send Payment</h3>
         </div>
 
+        {error && !balance ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <Send className="w-14 h-14 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center text-base">Enable business wallet to use this feature</p>
+          </div>
+        ) : (
         <form onSubmit={handleSendPayment} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="destination" className="font-semibold">
@@ -302,6 +314,7 @@ export function BusinessPaymentInterface() {
             )}
           </Button>
         </form>
+        )}
       </Card>
     </div>
   )
