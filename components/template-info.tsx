@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
-import { Shield, Zap, Code, Send, Package, Key, CheckCircle2, AlertCircle, BookOpen } from "lucide-react"
+import { Shield, Zap, Code, Send, Package, Key, CheckCircle2, BookOpen } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 export function TemplateInfo() {
@@ -34,34 +33,6 @@ export function TemplateInfo() {
 
   return (
     <div className="space-y-6">
-      <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900">
-        <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-        <AlertTitle className="text-blue-900 dark:text-blue-100 font-semibold">First Time Setup</AlertTitle>
-        <AlertDescription className="text-blue-800 dark:text-blue-200 mt-2">
-          <p className="mb-3">
-            Before you can connect with Handcash, you need to configure your Handcash app with the following redirect
-            URL:
-          </p>
-          <div className="bg-white dark:bg-gray-900 rounded-md p-3 border border-blue-200 dark:border-blue-800">
-            <code className="text-sm font-mono break-all text-gray-900 dark:text-gray-100">
-              &lt;deployment-url&gt;/auth/callback
-            </code>
-          </div>
-          <p className="mt-3 text-sm">
-            Add this URL to your Handcash app settings in the{" "}
-            <a
-              href="https://dashboard.handcash.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold underline hover:no-underline"
-            >
-              Handcash Dashboard
-            </a>
-            .
-          </p>
-        </AlertDescription>
-      </Alert>
-
       <Card className="p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/30 shadow-lg">
         <Accordion type="single" collapsible defaultValue="handcash-manual" className="w-full">
           <AccordionItem value="handcash-manual" className="border-none">

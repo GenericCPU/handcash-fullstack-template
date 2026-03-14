@@ -67,9 +67,11 @@ export default function HomePage() {
         <div className="container mx-auto px-6 py-6 max-w-2xl">
           <LandingContent />
 
-          <div className="mb-6">
-            <FirstTimeSetup />
-          </div>
+          {!isAuthenticated && (
+            <div className="mb-6">
+              <FirstTimeSetup />
+            </div>
+          )}
 
           <div className="space-y-6">
             <div className="bg-card rounded-3xl p-8 border border-border">
