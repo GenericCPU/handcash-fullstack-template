@@ -5,9 +5,12 @@ A production-ready Next.js template for building HandCash-powered applications w
 ## Quick Start
 
 1. **Deploy to Vercel** - Click the deploy button or use this template
-2. **Add Environment Variables** - Set your HandCash App ID and Secret
+2. **Add Environment Variables** - Set your HandCash App ID and Secret (see [Environment Variables](#environment-variables) below)
 3. **Configure Redirect URL** - Add `<your-deployment-url>/auth/callback` to your HandCash app settings
-4. **Start Building** - Customize the landing and authenticated pages for your app
+4. **First-time admin setup** - To use the Admin Dashboard:
+   - Set **ADMIN_HANDLE** to your HandCash handle (the user who can access `/admin`). Use the handle only, e.g. `YourHandle` — no `@` prefix.
+   - Set **BUSINESS_AUTH_TOKEN** to your business wallet auth token so the app can manage the business wallet (payments, inventory, minting, payment requests). Get this from your HandCash business wallet / developer settings.
+5. **Start Building** - Customize the landing and authenticated pages for your app
 
 ## Features
 
@@ -24,14 +27,27 @@ A production-ready Next.js template for building HandCash-powered applications w
 
 ## Environment Variables
 
-Add these to your Vercel project:
+Add these to your Vercel project (or local `.env`):
 
+**Required for the app:**
 ```bash
 HANDCASH_APP_ID=your_app_id_here
 HANDCASH_APP_SECRET=your_app_secret_here
 ```
 
 Get your credentials from the [HandCash Developer Dashboard](https://dashboard.handcash.io/).
+
+**First-time setup for Admin Dashboard:**
+```bash
+# HandCash handle of the user who can access /admin (no @ prefix)
+ADMIN_HANDLE=YourHandle
+
+# Business wallet auth token — required for Business Wallet, minting, payment requests, etc.
+BUSINESS_AUTH_TOKEN=your_business_wallet_token_here
+```
+
+- **ADMIN_HANDLE** — Only this user can open the Admin Dashboard. Use your HandCash handle without the `@` (e.g. `Cryptokang`).
+- **BUSINESS_AUTH_TOKEN** — Auth token for your HandCash business wallet. Without it, admin business wallet features (balance, send, inventory, mint, payment requests) will show “Enable business wallet to use this feature.” Get the token from your HandCash business/developer settings.
 
 ## Security Architecture
 

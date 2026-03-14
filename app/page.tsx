@@ -4,11 +4,10 @@ import { UserProfile } from "@/components/user-profile"
 import { TemplateInfo } from "@/components/template-info"
 import { LandingContent } from "@/components/landing-content"
 import { AuthenticatedContent } from "@/components/authenticated-content"
+import { FirstTimeSetup } from "@/components/first-time-setup"
 import { useAuth } from "@/lib/auth-context"
 import { HeaderBar } from "@/components/header-bar"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 
 function PageLoadingSkeleton() {
@@ -22,9 +21,6 @@ function PageLoadingSkeleton() {
         <div className="h-10 sm:h-12 bg-muted rounded-lg w-64 mx-auto mb-4 animate-pulse" />
         <div className="h-6 bg-muted/80 rounded-lg w-80 max-w-full mx-auto animate-pulse" style={{ animationDelay: "50ms" }} />
       </div>
-
-      {/* Config alert placeholder (optional, same height) */}
-      <div className="h-0" aria-hidden />
 
       {/* Profile card skeleton */}
       <div className="bg-card rounded-3xl p-8 border border-border animate-pulse" style={{ animationDelay: "100ms" }}>
@@ -50,7 +46,6 @@ function PageLoadingSkeleton() {
 export default function HomePage() {
   const searchParams = useSearchParams()
   const { isAuthenticated, isLoading } = useAuth()
-  const [configStatus, setConfigStatus] = useState<{ hasAppId: boolean; hasAppSecret: boolean; isConfigured: boolean } | null>(null)
 
   // If HandCash redirected to root with OAuth params, send to API callback to complete login
   useEffect(() => {
@@ -62,23 +57,6 @@ export default function HomePage() {
     }
   }, [searchParams])
 
-  useEffect(() => {
-    const checkConfig = async () => {
-      try {
-        const response = await fetch("/api/config-check", {
-          credentials: "include",
-        })
-        if (response.ok) {
-          const data = await response.json()
-          setConfigStatus(data)
-        }
-      } catch (err) {
-        console.error("Failed to check config:", err)
-      }
-    }
-    checkConfig()
-  }, [])
-
   return (
     <div className="bg-background min-h-screen">
       <HeaderBar />
@@ -89,25 +67,11 @@ export default function HomePage() {
         <div className="container mx-auto px-6 py-6 max-w-2xl">
           <LandingContent />
 
-          <div className="space-y-6">
-            {configStatus && !configStatus.isConfigured && (
-              <Alert variant="destructive" className="rounded-3xl border-border">
-                <AlertCircle className="h-5 w-5" />
-                <AlertTitle className="font-bold">Configuration Required</AlertTitle>
-                <AlertDescription>
-                  {!configStatus.hasAppId && !configStatus.hasAppSecret && (
-                    <>You need to add <code className="px-2 py-1 bg-background rounded font-mono text-sm">HANDCASH_APP_ID</code> and <code className="px-2 py-1 bg-background rounded font-mono text-sm">HANDCASH_APP_SECRET</code> to your environment variables.</>
-                  )}
-                  {!configStatus.hasAppId && configStatus.hasAppSecret && (
-                    <>You need to add <code className="px-2 py-1 bg-background rounded font-mono text-sm">HANDCASH_APP_ID</code> to your environment variables.</>
-                  )}
-                  {configStatus.hasAppId && !configStatus.hasAppSecret && (
-                    <>You need to add <code className="px-2 py-1 bg-background rounded font-mono text-sm">HANDCASH_APP_SECRET</code> to your environment variables.</>
-                  )}
-                </AlertDescription>
-              </Alert>
-            )}
+          <div className="mb-6">
+            <FirstTimeSetup />
+          </div>
 
+          <div className="space-y-6">
             <div className="bg-card rounded-3xl p-8 border border-border">
               <UserProfile />
             </div>
