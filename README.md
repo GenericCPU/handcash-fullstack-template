@@ -2,6 +2,10 @@
 
 A production-ready Next.js template for building HandCash-powered applications with authentication, payments, and digital collectibles.
 
+**This is a template.** If it helped you build something, please consider donating to **$BrandonC** on HandCash. Thank you.
+
+This project is **MIT licensed**. You can use it for free, modify it, and use it in commercial projects. You’re not required to open-source your own app, and there is no warranty—use it as you like.
+
 ## Quick Start
 
 1. **Deploy to Vercel** - Click the deploy button or use this template

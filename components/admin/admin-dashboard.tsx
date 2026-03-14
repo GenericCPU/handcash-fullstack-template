@@ -23,7 +23,6 @@ export default function AdminDashboard() {
             </div>
             <h1 className="text-4xl font-bold">Admin Dashboard</h1>
           </div>
-          <p className="text-muted-foreground text-lg">Business wallet management powered by HandCash</p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
