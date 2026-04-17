@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, Package, RefreshCw, Send, Eye, ChevronDown, ChevronUp, Flame } from "lucide-react"
+import { InventoryGridSkeleton } from "@/components/skeletons/app-skeletons"
 import { Badge } from "@/components/ui/badge"
 import { ItemTransferDialog } from "@/components/widgets/item-transfer-dialog"
 import { ItemInspectDialog } from "@/components/widgets/item-inspect-dialog"
@@ -75,8 +76,8 @@ export function InventoryDisplay() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="py-4">
+            <InventoryGridSkeleton count={4} />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center px-4 py-16">

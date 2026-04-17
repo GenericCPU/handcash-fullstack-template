@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, Package, RefreshCw, Send, Eye, ChevronDown, ChevronUp, Flame } from "lucide-react"
+import { InventoryGridSkeleton } from "@/components/skeletons/app-skeletons"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { ItemTransferDialog } from "@/components/widgets/item-transfer-dialog"
@@ -176,8 +177,8 @@ export function BusinessInventoryDisplay({ embedded = false }: BusinessInventory
   const body = (
     <>
       {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="py-4">
+            <InventoryGridSkeleton count={4} />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">

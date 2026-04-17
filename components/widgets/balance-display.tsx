@@ -2,7 +2,8 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, Wallet, RefreshCw } from "lucide-react"
+import { Wallet, RefreshCw } from "lucide-react"
+import { BalanceTilesSkeleton } from "@/components/skeletons/app-skeletons"
 import type { Balance } from "@/hooks/use-payments"
 
 export interface BalanceDisplayProps {
@@ -42,8 +43,8 @@ export function BalanceDisplay({
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <div className="py-2">
+          <BalanceTilesSkeleton />
         </div>
       ) : showPermissionHint && error && !balance ? (
         <div className="flex flex-col items-center justify-center px-4 py-16">

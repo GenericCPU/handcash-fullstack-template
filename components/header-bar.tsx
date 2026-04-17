@@ -18,6 +18,7 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { HeaderBarSkeleton } from "@/components/skeletons/app-skeletons"
 
 export function HeaderBar() {
   const router = useRouter()
@@ -63,19 +64,7 @@ export function HeaderBar() {
       <div className="container mx-auto px-3 sm:px-6">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {isLoading ? (
-            <div className="flex items-center justify-between w-full">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-muted rounded-lg animate-pulse" />
-              <div className="flex gap-0.5 sm:gap-1 bg-muted/30 rounded-full p-0.5 sm:p-1">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="w-9 h-8 sm:w-20 sm:h-9 bg-muted rounded-full animate-pulse"
-                    style={{ animationDelay: `${i * 100}ms` }}
-                  />
-                ))}
-              </div>
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-muted rounded-full animate-pulse" />
-            </div>
+            <HeaderBarSkeleton />
           ) : isAuthenticated && user ? (
             <>
               <Link href="/" className="flex flex-shrink-0 items-center transition-opacity hover:opacity-80">

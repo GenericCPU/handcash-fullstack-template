@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, RefreshCw, Sparkles, FileText, Copy } from "lucide-react"
+import { ItemTemplatesGridSkeleton } from "@/components/skeletons/app-skeletons"
 import { Badge } from "@/components/ui/badge"
 import { ItemTemplateMintDialog } from "@/components/admin/item-template-mint-dialog"
 import { ItemTemplateCreateDialog } from "@/components/admin/item-template-create-dialog"
@@ -165,8 +166,8 @@ export function ItemTemplatesDisplay() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="py-4">
+            <ItemTemplatesGridSkeleton cards={6} />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">

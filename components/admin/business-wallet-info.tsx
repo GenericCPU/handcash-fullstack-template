@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Building2, Copy, Check } from "lucide-react"
+import { Building2, Copy, Check } from "lucide-react"
+import { BusinessWalletProfileSkeleton } from "@/components/skeletons/app-skeletons"
 import { Button } from "@/components/ui/button"
 
 export interface BusinessProfile {
@@ -116,9 +117,9 @@ export function BusinessWalletInfo({ embedded = false, initialProfile }: Busines
 
   if (isLoading) {
     return (
-      <Card className="p-4 bg-muted/50">
-        <div className="flex items-center justify-center py-4">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      <Card className="bg-muted/50 p-4">
+        <div className="py-1">
+          <BusinessWalletProfileSkeleton />
         </div>
       </Card>
     )

@@ -3,7 +3,8 @@ import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Loader2, User, Shield } from "lucide-react"
+import { User, Shield } from "lucide-react"
+import { UserProfileSkeleton } from "@/components/skeletons/app-skeletons"
 import { LogoutButton } from "@/components/logout-button"
 import { DualLoginButtons } from "@/components/dual-login-buttons"
 import { useAuth } from "@/lib/auth-context"
@@ -46,11 +47,7 @@ export function UserProfile({ showAdminBadge = false }: UserProfileProps) {
   }, [user])
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    )
+    return <UserProfileSkeleton />
   }
 
   if (error) {

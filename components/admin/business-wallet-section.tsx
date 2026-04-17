@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Building2 } from "lucide-react"
+import { BusinessWalletSectionSkeleton } from "@/components/skeletons/app-skeletons"
 import { BusinessWalletInfo, type BusinessProfile } from "@/components/admin/business-wallet-info"
 import { BusinessPaymentInterface } from "@/components/admin/business-payment-interface"
 import { BusinessInventoryDisplay } from "@/components/admin/business-inventory-display"
@@ -47,14 +48,12 @@ export function BusinessWalletSection() {
 
   if (isLoading) {
     return (
-      <Card className="p-6 rounded-3xl border-border">
-        <div className="flex items-center gap-2 mb-6">
-          <Building2 className="w-6 h-6 text-primary" />
+      <Card className="rounded-3xl border-border p-6">
+        <div className="mb-6 flex items-center gap-2">
+          <Building2 className="h-6 w-6 text-primary" />
           <h3 className="text-xl font-bold">Business Wallet</h3>
         </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
+        <BusinessWalletSectionSkeleton />
       </Card>
     )
   }

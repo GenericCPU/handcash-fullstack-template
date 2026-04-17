@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Sparkles, Plus, X, FolderPlus, Pencil, Trash2, FolderOpen, Copy, Check, FileText } from "lucide-react"
+import { CollectionListSkeleton } from "@/components/skeletons/app-skeletons"
 import {
   Dialog,
   DialogContent,
@@ -850,8 +851,8 @@ export const MintInterface = forwardRef<MintInterfaceRef, {}>(function MintInter
               </div>
 
               {isLoadingCollections ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <div className="py-4">
+                  <CollectionListSkeleton rows={5} />
                 </div>
               ) : collections.length === 0 ? (
                 <div className="text-center py-8">

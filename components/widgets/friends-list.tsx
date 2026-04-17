@@ -4,9 +4,10 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Loader2, Users, RefreshCw, ChevronDown } from "lucide-react"
+import { Users, RefreshCw, ChevronDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useFriends } from "@/hooks/use-friends"
+import { FriendsListBodySkeleton } from "@/components/skeletons/app-skeletons"
 
 export function FriendsList() {
   const { friends, isLoading, error, fetchFriends } = useFriends()
@@ -33,9 +34,7 @@ export function FriendsList() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <FriendsListBodySkeleton rows={5} />
       ) : error ? (
         <div className="flex flex-col items-center justify-center px-4 py-16">
           <Users className="mb-5 h-14 w-14 text-muted-foreground/80" aria-hidden />
