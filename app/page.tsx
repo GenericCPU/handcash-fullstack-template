@@ -25,20 +25,13 @@ function OAuthCallbackRedirect() {
 function PageLoadingSkeleton() {
   return (
     <div className="container mx-auto max-w-2xl space-y-8 px-5 py-10 sm:px-8 sm:py-14">
-      <div className="text-center mb-6 pt-2">
-        <div className="inline-flex p-6 bg-muted/50 rounded-3xl mb-6">
-          <div className="w-24 h-24 rounded-2xl bg-muted animate-pulse" />
-        </div>
-        <div className="h-10 sm:h-12 bg-muted rounded-lg w-64 mx-auto mb-4 animate-pulse" />
-        <div
-          className="h-6 bg-muted/80 rounded-lg w-80 max-w-full mx-auto animate-pulse"
-          style={{ animationDelay: "50ms" }}
-        />
+      <div className="mb-6 flex justify-center pt-2 sm:mb-8">
+        <div className="h-5 w-full max-w-md animate-pulse rounded-lg bg-muted/80" />
       </div>
 
       <div
         className="animate-pulse rounded-3xl border-0 bg-card p-8 shadow-sm ring-1 ring-border/60 sm:p-10"
-        style={{ animationDelay: "100ms" }}
+        style={{ animationDelay: "50ms" }}
       >
         <div className="flex items-center gap-6">
           <div className="w-20 h-20 rounded-full bg-muted" />
@@ -50,7 +43,7 @@ function PageLoadingSkeleton() {
         </div>
       </div>
 
-      <div className="space-y-4" style={{ animationDelay: "150ms" }}>
+      <div className="space-y-4" style={{ animationDelay: "100ms" }}>
         <div className="h-24 bg-muted/50 rounded-2xl animate-pulse" />
         <div className="h-32 bg-muted/50 rounded-2xl animate-pulse" />
       </div>

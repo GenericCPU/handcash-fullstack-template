@@ -19,18 +19,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 
-interface BusinessProfile {
-  publicProfile?: {
-    avatarUrl?: string
-  }
-}
-
 export function HeaderBar() {
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const { user, isAuthenticated, isLoading, logout } = useAuth()
-  const [businessAvatar, setBusinessAvatar] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
 
@@ -39,20 +32,6 @@ export function HeaderBar() {
   }, [])
 
   useEffect(() => {
-    const fetchBusinessProfile = async () => {
-      try {
-        const response = await fetch("/api/business/profile")
-        if (response.ok) {
-          const data: BusinessProfile = await response.json()
-          if (data.publicProfile?.avatarUrl) {
-            setBusinessAvatar(data.publicProfile.avatarUrl)
-          }
-        }
-      } catch {
-        // Silently fail - will use default logo
-      }
-    }
-
     const checkAdminStatus = async () => {
       try {
         const response = await fetch("/api/admin/status", { credentials: "include" })
@@ -65,7 +44,6 @@ export function HeaderBar() {
       }
     }
 
-    fetchBusinessProfile()
     if (isAuthenticated) {
       checkAdminStatus()
     }
@@ -100,13 +78,9 @@ export function HeaderBar() {
             </div>
           ) : isAuthenticated && user ? (
             <>
-              <Link href="/" className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0">
-                <div className="p-2 sm:p-2.5 bg-primary/10 rounded-xl sm:rounded-2xl">
-                  {isMounted && businessAvatar ? (
-                    <img src={businessAvatar} alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg object-cover" />
-                  ) : (
-                    <Rocket className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-                  )}
+              <Link href="/" className="flex flex-shrink-0 items-center transition-opacity hover:opacity-80">
+                <div className="rounded-xl bg-primary/10 p-2 sm:rounded-2xl sm:p-2.5">
+                  <Rocket className="h-6 w-6 text-primary sm:h-8 sm:w-8" aria-hidden />
                 </div>
               </Link>
 

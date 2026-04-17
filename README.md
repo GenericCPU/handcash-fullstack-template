@@ -4,6 +4,8 @@ Next.js (App Router) app with HandCash Connect auth, session handling, user and 
 
 MIT licensed. HandCash docs: [docs.handcash.io](https://docs.handcash.io/). Security notes: [SECURITY.md](./SECURITY.md).
 
+Integrations and optional stack pieces (HandCash scopes, Google sign-in, UI libraries, business wallet): [docs/PLUGINS.md](./docs/PLUGINS.md).
+
 ## Environment
 
 | Variable | Purpose |

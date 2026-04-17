@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
   try {
     const businessAuthToken = process.env.BUSINESS_AUTH_TOKEN
     if (!businessAuthToken) {
-      // Business key is optional; return empty profile so header/landing can use default logo
       return NextResponse.json({ publicProfile: null })
     }
 
