@@ -66,3 +66,5 @@ Server-only token for the **business** HandCash account. Used for admin flows (m
 - **No payments UI:** Drop `PaymentInterface` / balance routes from your pages while keeping `handcash-service` if other features need the SDK.
 
 For HandCash product behavior and API details, use [docs.handcash.io](https://docs.handcash.io/). For security expectations of this repo, see [SECURITY.md](../SECURITY.md).
+
+Weighted loot pools / crate-style draws (reference math + RealWorldGoodz mapping): [WEIGHTED_LOOT_POOLS.md](./WEIGHTED_LOOT_POOLS.md).

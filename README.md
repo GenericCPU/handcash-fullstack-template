@@ -6,6 +6,8 @@ MIT licensed. HandCash docs: [docs.handcash.io](https://docs.handcash.io/). Secu
 
 Integrations and optional stack pieces (HandCash scopes, Google sign-in, UI libraries, business wallet): [docs/PLUGINS.md](./docs/PLUGINS.md).
 
+Weighted loot / pool draws (sample helpers + how they map to RealWorldGoodz): [docs/WEIGHTED_LOOT_POOLS.md](./docs/WEIGHTED_LOOT_POOLS.md).
+
 ## Environment
 
 | Variable | Purpose |
