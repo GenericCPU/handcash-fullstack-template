@@ -17,9 +17,8 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: "Handcash Demo - Connect Your Wallet",
-  description: "Demo app showcasing Handcash v3 SDK authentication and user profiles",
-  generator: "v0.app",
+  title: "HandCash app",
+  description: "HandCash Connect and wallet integration",
   icons: {
     icon: [
       {

@@ -63,13 +63,13 @@ export function UserProfile({ showAdminBadge = false }: UserProfileProps) {
 
   if (!user) {
     return (
-      <div className="text-center py-16">
-        <div className="inline-flex p-5 bg-muted rounded-full mb-6">
-          <User className="w-14 h-14 text-muted-foreground" />
+      <div className="px-2 py-6 text-center sm:py-8">
+        <div className="mb-8 inline-flex rounded-full bg-muted/60 p-6 shadow-sm ring-1 ring-border/40">
+          <User className="h-14 w-14 text-muted-foreground/80" aria-hidden />
         </div>
-        <h2 className="text-3xl font-bold mb-3">Welcome</h2>
-        <p className="text-muted-foreground text-lg mb-8 max-w-sm mx-auto">
-          Sign in with Google or connect your Handcash wallet to view your profile
+        <h2 className="mb-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Sign in</h2>
+        <p className="mx-auto mb-10 max-w-md text-[15px] leading-relaxed text-muted-foreground sm:text-lg">
+          Use Google or HandCash to open your profile and wallet features below.
         </p>
         <div className="flex justify-center">
           <DualLoginButtons />
@@ -79,20 +79,22 @@ export function UserProfile({ showAdminBadge = false }: UserProfileProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-6">
-        <Avatar className="w-20 h-20">
+    <div className="space-y-8">
+      <div className="flex items-center gap-5 sm:gap-6">
+        <Avatar className="h-20 w-20 shrink-0 ring-2 ring-border/30 ring-offset-2 ring-offset-background">
           <AvatarImage src={user.publicProfile.avatarUrl || "/placeholder.svg"} alt={user.publicProfile.displayName} />
-          <AvatarFallback className="text-2xl font-bold">
-            {user.publicProfile.displayName.charAt(0).toUpperCase()}
+          <AvatarFallback className="text-2xl font-semibold">
+            {(user.publicProfile.displayName?.trim() || user.publicProfile.handle || "?").charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2 flex-wrap">
-            <h3 className="text-2xl font-bold truncate">{user.publicProfile.displayName}</h3>
-            <Badge variant="secondary" className="shrink-0 rounded-full px-3 py-1">
-              Connected
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex flex-wrap items-center gap-2.5">
+            <h3 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              {user.publicProfile.displayName?.trim() || user.publicProfile.handle}
+            </h3>
+            <Badge variant="secondary" className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium">
+              Signed in
             </Badge>
             {showAdminBadge && isAdmin && (
               <Badge variant="default" className="shrink-0 rounded-full px-3 py-1 bg-primary">
@@ -108,8 +110,8 @@ export function UserProfile({ showAdminBadge = false }: UserProfileProps) {
               </Button>
             )}
           </div>
-          <p className="text-muted-foreground text-lg mb-1">${user.publicProfile.handle}</p>
-          <p className="text-sm font-mono text-muted-foreground break-all">{user.publicProfile.paymail}</p>
+          <p className="mb-1 text-[15px] text-muted-foreground">${user.publicProfile.handle}</p>
+          <p className="break-all font-mono text-xs text-muted-foreground/90 sm:text-sm">{user.publicProfile.paymail}</p>
         </div>
       </div>
       <LogoutButton />

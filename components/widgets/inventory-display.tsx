@@ -63,11 +63,11 @@ export function InventoryDisplay() {
 
   return (
     <>
-      <Card className="p-6 rounded-3xl border-border">
-        <div className="flex items-center justify-between mb-6">
+      <Card className="rounded-3xl border-0 bg-card p-6 shadow-sm ring-1 ring-border/60 sm:p-8">
+        <div className="mb-6 flex items-center justify-between sm:mb-8">
           <div className="flex items-center gap-3">
-            <Package className="w-6 h-6 text-primary" />
-            <h3 className="text-xl font-bold">My Inventory</h3>
+            <Package className="h-6 w-6 shrink-0 text-primary" aria-hidden />
+            <h3 className="text-base font-semibold tracking-tight text-foreground">Inventory</h3>
           </div>
           <Button variant="ghost" size="sm" onClick={() => fetchInventory()} disabled={isLoading} className="rounded-full">
             <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
@@ -79,22 +79,28 @@ export function InventoryDisplay() {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-12 px-4">
-            <Package className="w-14 h-14 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground text-center text-base">Enable inventory permission to use this feature</p>
+          <div className="flex flex-col items-center justify-center px-4 py-16">
+            <Package className="mb-5 h-14 w-14 text-muted-foreground/80" aria-hidden />
+            <p className="max-w-xs text-center text-[15px] leading-relaxed text-muted-foreground">
+              Turn on the <span className="font-medium text-foreground/90">Inventory</span> permission for this app in
+              HandCash, then sign in again.
+            </p>
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-16">
-            <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground text-lg">No items in your inventory yet</p>
+          <div className="px-4 py-20 text-center">
+            <Package className="mx-auto mb-5 h-16 w-16 text-muted-foreground/70" aria-hidden />
+            <p className="text-[15px] font-medium text-foreground/90">No items yet</p>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Items you collect or receive will appear here. You can inspect, send, or burn them from each card.
+            </p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {(isExpanded ? items : items.slice(0, 4)).map((item) => (
               <div
                 key={item.id}
-                className="border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-shadow"
+                className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50 transition-shadow hover:shadow-md"
               >
                 <div className="aspect-square bg-muted relative">
                   <img

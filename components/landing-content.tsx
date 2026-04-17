@@ -38,7 +38,7 @@ export function LandingContent() {
   }, [])
 
   return (
-    <div className="mb-6 pt-2">
+    <div className="mb-8 pt-2 sm:mb-10">
       {isMounted && (businessAvatar || businessDisplayName) && (
         <div className="text-center">
           {businessAvatar && (

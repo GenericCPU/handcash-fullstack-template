@@ -1,29 +1,45 @@
 "use client"
 
 import { UserProfile } from "@/components/user-profile"
-import { TemplateInfo } from "@/components/template-info"
 import { LandingContent } from "@/components/landing-content"
 import { AuthenticatedContent } from "@/components/authenticated-content"
-import { FirstTimeSetup } from "@/components/first-time-setup"
 import { useAuth } from "@/lib/auth-context"
 import { HeaderBar } from "@/components/header-bar"
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
+
+function OAuthCallbackRedirect() {
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const state = searchParams.get("state")
+    if (state) {
+      const query = searchParams.toString()
+      window.location.replace(`/api/auth/callback?${query}`)
+    }
+  }, [searchParams])
+
+  return null
+}
 
 function PageLoadingSkeleton() {
   return (
-    <div className="container mx-auto px-6 py-6 max-w-2xl space-y-6">
-      {/* Hero skeleton */}
+    <div className="container mx-auto max-w-2xl space-y-8 px-5 py-10 sm:px-8 sm:py-14">
       <div className="text-center mb-6 pt-2">
         <div className="inline-flex p-6 bg-muted/50 rounded-3xl mb-6">
           <div className="w-24 h-24 rounded-2xl bg-muted animate-pulse" />
         </div>
         <div className="h-10 sm:h-12 bg-muted rounded-lg w-64 mx-auto mb-4 animate-pulse" />
-        <div className="h-6 bg-muted/80 rounded-lg w-80 max-w-full mx-auto animate-pulse" style={{ animationDelay: "50ms" }} />
+        <div
+          className="h-6 bg-muted/80 rounded-lg w-80 max-w-full mx-auto animate-pulse"
+          style={{ animationDelay: "50ms" }}
+        />
       </div>
 
-      {/* Profile card skeleton */}
-      <div className="bg-card rounded-3xl p-8 border border-border animate-pulse" style={{ animationDelay: "100ms" }}>
+      <div
+        className="animate-pulse rounded-3xl border-0 bg-card p-8 shadow-sm ring-1 ring-border/60 sm:p-10"
+        style={{ animationDelay: "100ms" }}
+      >
         <div className="flex items-center gap-6">
           <div className="w-20 h-20 rounded-full bg-muted" />
           <div className="flex-1 space-y-3">
@@ -34,7 +50,6 @@ function PageLoadingSkeleton() {
         </div>
       </div>
 
-      {/* Content skeleton */}
       <div className="space-y-4" style={{ animationDelay: "150ms" }}>
         <div className="h-24 bg-muted/50 rounded-2xl animate-pulse" />
         <div className="h-32 bg-muted/50 rounded-2xl animate-pulse" />
@@ -44,45 +59,27 @@ function PageLoadingSkeleton() {
 }
 
 export default function HomePage() {
-  const searchParams = useSearchParams()
   const { isAuthenticated, isLoading } = useAuth()
-
-  // If HandCash redirected to root with OAuth params, send to API callback to complete login
-  useEffect(() => {
-    const state = searchParams.get("state")
-    if (state) {
-      const query = searchParams.toString()
-      window.location.replace(`/api/auth/callback?${query}`)
-      return
-    }
-  }, [searchParams])
 
   return (
     <div className="bg-background min-h-screen">
+      <Suspense fallback={null}>
+        <OAuthCallbackRedirect />
+      </Suspense>
       <HeaderBar />
 
       {isLoading ? (
         <PageLoadingSkeleton />
       ) : (
-        <div className="container mx-auto px-6 py-6 max-w-2xl">
+        <div className="container mx-auto max-w-2xl px-5 py-10 sm:px-8 sm:py-14">
           <LandingContent />
 
-          {!isAuthenticated && (
-            <div className="mb-6">
-              <FirstTimeSetup />
-            </div>
-          )}
-
-          <div className="space-y-6">
-            <div className="bg-card rounded-3xl p-8 border border-border">
+          <div className="space-y-8 sm:space-y-10">
+            <div className="rounded-3xl border-0 bg-card p-8 shadow-sm ring-1 ring-border/60 sm:p-10">
               <UserProfile />
             </div>
 
-            {!isAuthenticated ? (
-              <TemplateInfo />
-            ) : (
-              <AuthenticatedContent />
-            )}
+            {isAuthenticated ? <AuthenticatedContent /> : null}
           </div>
         </div>
       )}

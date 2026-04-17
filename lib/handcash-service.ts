@@ -72,20 +72,25 @@ export class HandCashService {
   private appSecret: string
 
   constructor() {
-    this.appId = process.env.HANDCASH_APP_ID!
-    this.appSecret = process.env.HANDCASH_APP_SECRET!
+    this.appId = (process.env.HANDCASH_APP_ID || "").trim()
+    this.appSecret = (process.env.HANDCASH_APP_SECRET || "").trim()
+  }
 
+  /** Validates app credentials; deferred from constructor so `next build` can run without env. */
+  private ensureAppCredentials(): void {
     if (!this.appId || !this.appSecret) {
       throw new Error("HandCash credentials not configured")
     }
   }
 
   private getSDKClient(privateKey: string) {
+    this.ensureAppCredentials()
     const sdk = getInstance({ appId: this.appId, appSecret: this.appSecret })
     return sdk.getAccountClient(privateKey)
   }
 
   private getConnectAccount(privateKey: string) {
+    this.ensureAppCredentials()
     const handCashConnect = new HandCashConnect({
       appId: this.appId,
       appSecret: this.appSecret,
@@ -191,6 +196,7 @@ export class HandCashService {
   }
 
   async getExchangeRate(currencyCode = "USD") {
+    this.ensureAppCredentials()
     const sdk = getInstance({ appId: this.appId, appSecret: this.appSecret })
     const { data: rate, error } = await Connect.getExchangeRate({
       client: sdk.client,
@@ -266,6 +272,7 @@ export class HandCashService {
   // ─── Item burn ───────────────────────────────────────────────────────────
 
   async burnItem(privateKey: string, origin: string) {
+    this.ensureAppCredentials()
     const minter = HandCashMinter.fromAppCredentials({
       appId: this.appId,
       appSecret: this.appSecret,

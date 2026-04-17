@@ -86,7 +86,10 @@ export function ItemTransferDialog({ item, open, onOpenChange, onSuccess, apiEnd
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Transfer Item</DialogTitle>
-          <DialogDescription>Send this item to another HandCash user or wallet address</DialogDescription>
+          <DialogDescription>
+            Send to a HandCash handle, paymail (user@handcash.io), or supported Bitcoin address. Multi-recipient send
+            only supports handles.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -102,7 +105,7 @@ export function ItemTransferDialog({ item, open, onOpenChange, onSuccess, apiEnd
             <Label htmlFor="destination">Recipient Handle or Address</Label>
             <Input
               id="destination"
-              placeholder="$handle or bitcoin address"
+              placeholder="$handle, paymail, or address"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               disabled={isLoading}

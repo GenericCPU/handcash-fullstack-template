@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { handcashService } from "@/lib/handcash-service"
 import { requireAuth } from "@/lib/auth-middleware"
 import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
+import { parseDestinationList, type ClassifiedDestination } from "@/lib/transfer-destinations"
 
 export async function POST(request: NextRequest) {
   // Apply rate limiting before auth check
@@ -44,35 +45,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "At least one destination is required" }, { status: 400 })
     }
 
-    // Clean and validate each destination format
-    const usernamePattern = /^[\w\-_.]{3,50}$/
-    const cleanDestinations: string[] = []
-    for (const dest of destinationsList) {
-      const clean = dest.trim().replace(/^[@$]/, "") // Remove @/$ if present
-      if (!usernamePattern.test(clean)) {
-        return NextResponse.json(
-          { error: `Invalid username format for "${dest}": Username must be 3-50 characters and contain only letters, numbers, hyphens, underscores, and dots.` },
-          { status: 400 }
-        )
-      }
-      cleanDestinations.push(clean)
-    }
-
-    // Validate all handles exist before proceeding
-    const handleMap = await handcashService.resolveHandles(privateKey, cleanDestinations)
-    const validDestinations = cleanDestinations.filter((dest) => {
-      return !!handleMap[dest.toLowerCase()]
-    })
-
-    if (validDestinations.length === 0) {
+    const classified = parseDestinationList(destinationsList)
+    if (!classified) {
       return NextResponse.json(
-        { error: "No valid destination handles found. All provided handles are invalid or do not exist." },
-        { status: 400 }
+        {
+          error:
+            "Invalid destination. Use a HandCash handle (e.g. Username or $Username), a paymail (user@handcash.io), or a supported Bitcoin address.",
+        },
+        { status: 400 },
       )
     }
 
-    // Use only valid destinations
-    const finalDestinations = validDestinations
+    const hasOpaque = classified.some((c) => c.kind === "opaque")
+    if (classified.length > 1 && hasOpaque) {
+      return NextResponse.json(
+        {
+          error:
+            "Multiple destinations are only supported for HandCash handles. Use one paymail or address per request.",
+        },
+        { status: 400 },
+      )
+    }
+
+    const handleEntries = classified.filter((c): c is Extract<ClassifiedDestination, { kind: "handle" }> => c.kind === "handle")
+    const handleCleans = handleEntries.map((c) => c.clean)
+    const handleMap =
+      handleCleans.length > 0 ? await handcashService.resolveHandles(privateKey, handleCleans) : {}
+
+    const finalDestinations: string[] = []
+    for (const c of classified) {
+      if (c.kind === "opaque") {
+        finalDestinations.push(c.value)
+        continue
+      }
+      if (!handleMap[c.clean.toLowerCase()]) {
+        return NextResponse.json(
+          { error: `No HandCash user found for handle "${c.raw}". Check spelling or use a paymail.` },
+          { status: 400 },
+        )
+      }
+      finalDestinations.push(c.clean)
+    }
 
     // If we have 1 origin but multiple destinations, auto-group by finding all items with the same groupingValue
     let finalOrigins = itemOrigins
