@@ -6,6 +6,8 @@ MIT licensed. HandCash docs: [docs.handcash.io](https://docs.handcash.io/). Secu
 
 Integrations and optional stack pieces (HandCash scopes, Google sign-in, UI libraries, business wallet): [docs/PLUGINS.md](./docs/PLUGINS.md).
 
+**Machine payments:** `@handcash/mpp` is included (local path `../../handcash/handcash-mpp` when this repo sits next to your `handcash` checkout). Setup and fork notes: [docs/MACHINE_PAYMENTS.md](./docs/MACHINE_PAYMENTS.md).
+
 Weighted loot / pool draws (sample helpers + how they map to RealWorldGoodz): [docs/WEIGHTED_LOOT_POOLS.md](./docs/WEIGHTED_LOOT_POOLS.md).
 
 ## Environment
@@ -17,6 +19,8 @@ Weighted loot / pool draws (sample helpers + how they map to RealWorldGoodz): [d
 | `ADMIN_HANDLE` | Handle (no `@`) allowed to use `/admin` and admin APIs |
 | `BUSINESS_AUTH_TOKEN` | Optional; business wallet for admin mint, inventory, payment requests |
 | `WEBSITE_URL` | Public site URL; use for webhooks and production redirects (e.g. `https://your.app`) |
+| `MPP_CHALLENGE_SECRET` | Optional; recommended for `@handcash/mpp` 402 / receipt binding (see [docs/MACHINE_PAYMENTS.md](./docs/MACHINE_PAYMENTS.md)) |
+| `NVIDIA_TOKEN` | Optional; only if you add NVIDIA-hosted APIs (NIM, etc.). Keep in `.env.local`, never commit. |
 
 Copy [.env.example](./.env.example) to `.env.local`. Register redirect URL `{WEBSITE_URL or dev origin}/auth/callback` on your HandCash app.
 

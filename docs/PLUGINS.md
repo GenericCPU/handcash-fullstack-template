@@ -8,7 +8,8 @@ This document lists the major libraries, HandCash features, and optional capabil
 |--------|------|
 | **`@handcash/sdk`** | Low-level SDK; `Connect.*` helpers for profile, balances, pay, inventory, items. |
 | **`@handcash/handcash-connect`** | `HandCashConnect` / `HandCashMinter` for flows that need the Connect account or minting APIs. |
-| **`lib/handcash-service.ts`** | Single place that calls the SDK/Connect. Prefer adding methods here instead of importing HandCash packages in routes or UI. |
+| **`@handcash/mpp`** | Machine payments: HTTP 402, HandCash Pay, receipt JWTs, paid-route gate. Local monorepo path `file:../../handcash/handcash-mpp`; see [MACHINE_PAYMENTS.md](./MACHINE_PAYMENTS.md). |
+| **`lib/handcash-service.ts`** | Single place that calls the SDK/Connect. Prefer adding methods here instead of importing HandCash packages in routes or UI. Exposes **`getAppLevelClient()`** for server-only MPP (`@handcash/mpp`) use. |
 | **OAuth + session** | User signs in via HandCash; session cookie holds metadata; see `app/api/auth/` and `lib/auth-context.tsx`. |
 | **Google sign-in** | Optional path through HandCash Market (`/api/auth/google`). UI: `DualLoginButtons`. |
 

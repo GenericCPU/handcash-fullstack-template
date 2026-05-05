@@ -4,7 +4,8 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * RULE: Do not import @handcash/sdk or @handcash/handcash-connect anywhere
  *       except in this file. API routes and app code must use handcashService
- *       methods only.
+ *       methods only. For @handcash/mpp, pass `getAppLevelClient()` into MPP
+ *       helpers — do not call getInstance in route files.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * USE CASES (call these; do not write HandCash code elsewhere):
@@ -313,6 +314,15 @@ export class HandCashService {
     })
     if (error) throw new Error(error.message || "Failed to get locked items")
     return data
+  }
+
+  /**
+   * App-level HandCash SDK client (no user `privateKey`). Use only on the server for
+   * features like `@handcash/mpp` (payment requests, 402 challenges). Same credentials as `HANDCASH_APP_ID` / `HANDCASH_APP_SECRET`.
+   */
+  getAppLevelClient() {
+    this.ensureAppCredentials()
+    return getInstance({ appId: this.appId, appSecret: this.appSecret }).client
   }
 }
 
