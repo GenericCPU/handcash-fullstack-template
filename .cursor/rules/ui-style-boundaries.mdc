@@ -1,0 +1,94 @@
+---
+description: Strict layering between Chakra v3 / Ark UI and Tailwind v4 — Chakra owns behavior, Tailwind owns visuals, CSS variables own tokens
+globs: "components/**/*.{ts,tsx},app/**/*.{ts,tsx,css},lib/chakra/**/*.ts"
+alwaysApply: false
+---
+
+# UI style boundaries: Chakra v3 / Ark UI vs Tailwind v4
+
+This template is the reference starter for HandCash apps. The UI stack is
+layered, and each layer has one job. Forks that follow these rules avoid the
+preflight, sizing, contrast, label, and dismissal regressions that prompted
+the boundary in the first place. Follow them when authoring or editing
+anything in `components/ui/*` or any styled component.
+
+## Layer responsibilities
+
+| Layer | Owner | Job |
+| --- | --- | --- |
+| Behavior + a11y + state machines | Ark UI (via Chakra v3) | Open/close, focus trap, keyboard nav, ARIA, controlled state |
+| Tokens (colors, radii, fonts, shadows) | CSS variables in `app/globals.css` | One source of truth, read by Tailwind, Chakra system, and raw CSS |
+| Visual styling | Tailwind v4 utility classes via `className` | Backgrounds, borders, spacing, typography, layout |
+| Compatibility shape | `components/ui/*` wrappers | Translate Ark/Chakra into a shadcn/Radix-shaped API for consumers |
+
+## Hard rules
+
+1. **Chakra preflight stays off.** `lib/chakra/system.ts` sets `preflight: false`.
+   Tailwind v4 owns the base reset; do not let Chakra inject a second one.
+2. **No Chakra style props.** Inside `components/ui/*`, never use Chakra style
+   props (`bg`, `color`, `p`, `mt`, `borderColor`, `_hover`, etc.) on Chakra
+   components — every visual choice goes on `className` as a Tailwind utility.
+3. **No hardcoded hex / rgb.** Read from CSS variables: `bg-primary`,
+   `text-foreground`, `border-border`. New tokens go in `app/globals.css`
+   first, get a Tailwind alias under `@theme inline`, then get a Chakra
+   `semanticTokens` entry in `lib/chakra/system.ts` if Chakra internals need it.
+4. **Keep `data-slot`.** Every wrapper component sets `data-slot="..."` so
+   product code can target it with Tailwind selectors and the previous
+   shadcn-shaped CSS keeps working.
+5. **Always-controlled close.** Dialog and DropdownMenu wrappers hold their
+   own `internalOpen` mirror and route every close through one
+   `handleOpenChange`. Do not invent ad-hoc internal mirrors in consumers —
+   pass `open` / `onOpenChange` straight through and trust the wrapper.
+6. **No Chakra recipes for our visual styling.** If a recipe insists on a
+   shape that fights Tailwind (e.g. Avatar's enforced size), drop down to
+   `@ark-ui/react/<part>` directly inside the wrapper.
+7. **Forward `className` last.** Always merge with `cn()` and place the
+   consumer's `className` at the end so it can override wrapper defaults.
+
+## Anti-patterns and fixes
+
+```tsx
+// BAD — Chakra style props inside our wrapper
+<ChakraSelect.Root colorPalette="blue" bg="bg.subtle">
+
+// GOOD — Tailwind on the wrapped element
+<ChakraSelect.Root>
+  <ChakraSelect.Content className="bg-popover text-popover-foreground border border-border">
+```
+
+```tsx
+// BAD — hardcoded color
+<div className="bg-[#5865f2] text-white">
+
+// GOOD — token via Tailwind alias
+<div className="bg-primary text-primary-foreground">
+```
+
+```tsx
+// BAD — consumer reinvents controlled close
+const [internalOpen, setInternalOpen] = useState(open)
+useEffect(() => setInternalOpen(open), [open])
+return <Dialog open={internalOpen} onOpenChange={setInternalOpen}>
+
+// GOOD — trust the wrapper
+return <Dialog open={open} onOpenChange={onOpenChange}>
+```
+
+```tsx
+// BAD — render JSX inside Select.ValueText without itemToString
+<Select.ValueText>{value}</Select.ValueText>
+
+// GOOD — collection knows how to stringify, useSelectContext renders the label
+const collection = createListCollection({
+  items,
+  itemToValue: (i) => i.id,
+  itemToString: (i) => i.label,
+})
+```
+
+## When in doubt
+
+If a Chakra component is fighting Tailwind, the wrapper is the place to fix it
+once — not the consumer. Push the conflict down into `components/ui/*`, write
+the workaround there (a recipe override, an Ark-direct drop-down, a token
+mapping), and keep product code reading the same shadcn-shaped API.
