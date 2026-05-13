@@ -277,7 +277,16 @@ function SelectItem({
       )}
       {...props}
     >
-      {/* Keep icon + label children horizontal inside ItemText. */}
+      {/*
+        Inner flex wrapper forces icon + label children to lay out
+        horizontally. Tailwind v4 preflight sets `img { display: block }`,
+        and the consumer's `flex items-center gap-2` className sits on the
+        outer <Item>, not on <ItemText>. Without this wrapper, multi-child
+        SelectItems (icon + label) stack because the block-level <img>
+        pushes its sibling <span> to a new line. A single string child is
+        still rendered correctly — a flex container with one inline child
+        works fine.
+      */}
       <ChakraSelect.ItemText>
         <span className="flex items-center gap-2">{children}</span>
       </ChakraSelect.ItemText>
