@@ -54,8 +54,27 @@ type SonnerOptions = {
 
 type ChakraToastType = 'info' | 'success' | 'error' | 'warning' | 'loading'
 
-function normalizeMessage(message: React.ReactNode, opts?: SonnerOptions, type?: ChakraToastType) {
-  const id = opts?.id != null ? String(opts.id) : undefined
+// Eagerly resolve a stable id so Zag's toast store never receives `id: undefined`.
+// (Zag does `const id = data.id ?? uuid(); const t = { id, ...data, ... }` —
+//  any `id: undefined` in `data` spreads back over the resolved id and the
+//  toast machine then crashes with `missing required props: id`.)
+let toastCounter = 0
+function nextToastId(): string {
+  // Crypto is preferred when present (client-side); otherwise fall back to
+  // a process-monotonic counter so toast ids are still unique on the server.
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `toast-${crypto.randomUUID()}`
+  }
+  toastCounter += 1
+  return `toast-${Date.now().toString(36)}-${toastCounter}`
+}
+
+function normalizeMessage(
+  message: React.ReactNode,
+  opts?: SonnerOptions,
+  type?: ChakraToastType,
+) {
+  const id = opts?.id != null ? String(opts.id) : nextToastId()
   const action = (() => {
     const a = opts?.action as
       | { label: string; onClick: (event?: unknown) => void }
@@ -127,15 +146,23 @@ const makeToast = (): ToastCallable => {
   }
   fn.promise = (promise, msgs) => {
     const p = typeof promise === 'function' ? promise() : promise
+    // Pre-allocate a stable id for the whole loading→success/error lifecycle.
+    // Zag's `promise()` helper threads its own id through internally, but it
+    // requires the loading config to also carry an id when consumers don't
+    // pass one — otherwise `data.id: undefined` re-overrides the resolved id
+    // in the toast store and Zag throws `missing required props: id`.
+    const id = nextToastId()
     chakraToaster.promise(p, {
-      loading: { title: msgs.loading },
+      loading: { id, title: msgs.loading },
       success: (data) => ({
+        id,
         title:
           typeof msgs.success === 'function'
             ? (msgs.success as (data: unknown) => React.ReactNode)(data)
             : msgs.success,
       }),
       error: (err) => ({
+        id,
         title:
           typeof msgs.error === 'function'
             ? (msgs.error as (err: unknown) => React.ReactNode)(err)
