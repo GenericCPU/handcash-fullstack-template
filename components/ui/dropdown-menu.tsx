@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Menu as ChakraMenu, Portal } from '@chakra-ui/react'
+import { Menu as ChakraMenu, Portal, useMenuContext } from '@chakra-ui/react'
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -133,6 +133,13 @@ function DropdownMenuItem({
     value?: string
   }) {
   const autoId = React.useId()
+  // Belt-and-suspenders close. Ark's state machine already transitions
+  // to "closed" on ITEM_CLICK when `closeOnSelect` is true and the menu
+  // is uncontrolled — but we've seen consumer setState calls in onClick
+  // race the transition under React 19 batching, leaving the menu open
+  // visually. Calling setOpen(false) in a microtask flushes a forced
+  // close AFTER React commits the consumer's setState batch.
+  const menu = useMenuContext()
   return (
     <ChakraMenu.Item
       value={value ?? autoId}
@@ -152,7 +159,12 @@ function DropdownMenuItem({
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
-      onClick={onClick}
+      onClick={(event) => {
+        onClick?.(event)
+        if (closeOnSelect && !event.defaultPrevented) {
+          queueMicrotask(() => menu.setOpen(false))
+        }
+      }}
       {...props}
     />
   )
@@ -169,6 +181,7 @@ function DropdownMenuCheckboxItem({
 }: Omit<React.ComponentProps<typeof ChakraMenu.CheckboxItem>, 'onCheckedChange'> & {
   onCheckedChange?: (checked: boolean) => void
 }) {
+  const menu = useMenuContext()
   return (
     <ChakraMenu.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
@@ -181,7 +194,12 @@ function DropdownMenuCheckboxItem({
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
-      onClick={onClick}
+      onClick={(event) => {
+        onClick?.(event)
+        if (closeOnSelect && !event.defaultPrevented) {
+          queueMicrotask(() => menu.setOpen(false))
+        }
+      }}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
@@ -231,6 +249,7 @@ function DropdownMenuRadioItem({
   onClick,
   ...props
 }: React.ComponentProps<typeof ChakraMenu.RadioItem>) {
+  const menu = useMenuContext()
   return (
     <ChakraMenu.RadioItem
       data-slot="dropdown-menu-radio-item"
@@ -241,7 +260,12 @@ function DropdownMenuRadioItem({
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
-      onClick={onClick}
+      onClick={(event) => {
+        onClick?.(event)
+        if (closeOnSelect && !event.defaultPrevented) {
+          queueMicrotask(() => menu.setOpen(false))
+        }
+      }}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
