@@ -25,49 +25,22 @@ import { cn } from '@/lib/utils'
 
 type ChakraDialogRootProps = React.ComponentProps<typeof ChakraDialog.Root>
 
-type RadixDialogProps = Omit<
-  ChakraDialogRootProps,
-  'open' | 'defaultOpen' | 'onOpenChange'
-> & {
-  open?: boolean
-  defaultOpen?: boolean
+type RadixDialogProps = Omit<ChakraDialogRootProps, 'onOpenChange'> & {
   onOpenChange?: (open: boolean) => void
 }
 
 /**
- * Always-controlled wrapper around Chakra v3 Dialog. Holds the truth of
- * `open` locally and forwards it to Chakra/Ark. Every close path — close
- * button, programmatic close, Escape, outside click — routes through
- * `handleOpenChange`, which flips the prop synchronously so the dialog
- * cannot be re-asserted open by a parent re-render race.
- *
- * Consumers passing `open`/`onOpenChange` keep working — we mirror their
- * value and notify on every change.
+ * Pass-through wrapper. Trusts Ark/Chakra's own state machine; consumer
+ * setState → re-render → Ark watch effect → CONTROLLED.CLOSE → state
+ * "closed". Any race that breaks dismissal lives in the consumer's
+ * parent state, not here.
  */
-function Dialog({
-  open: controlledOpen,
-  defaultOpen = false,
-  onOpenChange,
-  ...props
-}: RadixDialogProps) {
-  const isControlled = controlledOpen !== undefined
-  const [internalOpen, setInternalOpen] = React.useState<boolean>(
-    controlledOpen ?? defaultOpen,
-  )
-
-  React.useEffect(() => {
-    if (isControlled) setInternalOpen(controlledOpen)
-  }, [isControlled, controlledOpen])
-
-  const handleOpenChange = (next: boolean) => {
-    if (!isControlled) setInternalOpen(next)
-    onOpenChange?.(next)
-  }
-
+function Dialog({ onOpenChange, ...props }: RadixDialogProps) {
   return (
     <ChakraDialog.Root
-      open={isControlled ? controlledOpen : internalOpen}
-      onOpenChange={(details) => handleOpenChange(details.open)}
+      onOpenChange={
+        onOpenChange ? (details) => onOpenChange(details.open) : undefined
+      }
       {...props}
     />
   )

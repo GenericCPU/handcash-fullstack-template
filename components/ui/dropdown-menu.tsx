@@ -47,40 +47,21 @@ type RadixDropdownMenuProps = Omit<
 }
 
 /**
- * Always-controlled wrapper. We hold the truth in local state and pass it
- * to Chakra/Ark as `open`. This makes the close path bulletproof: every
- * trigger (item click, outside click, Escape, programmatic close) flows
- * through `handleOpenChange` and we flip the prop synchronously, so the
- * machine cannot get stuck in the "open" state because of a race between
- * our items' click handlers and a parent re-render. Consumers that pass
- * `open`/`defaultOpen` still work — we just mirror it.
+ * Pass-through wrapper. Trusts Ark's uncontrolled state machine — items
+ * close themselves by transitioning to "closed" directly on ITEM_CLICK
+ * and outside-click, no React state round-trip required.
  */
 function DropdownMenu({
-  open: controlledOpen,
-  defaultOpen = false,
   onOpenChange,
   placement = 'bottom-start',
   gutter = 4,
   ...props
 }: RadixDropdownMenuProps) {
-  const isControlled = controlledOpen !== undefined
-  const [internalOpen, setInternalOpen] = React.useState<boolean>(
-    controlledOpen ?? defaultOpen,
-  )
-
-  React.useEffect(() => {
-    if (isControlled) setInternalOpen(controlledOpen)
-  }, [isControlled, controlledOpen])
-
-  const handleOpenChange = (next: boolean) => {
-    if (!isControlled) setInternalOpen(next)
-    onOpenChange?.(next)
-  }
-
   return (
     <ChakraMenu.Root
-      open={isControlled ? controlledOpen : internalOpen}
-      onOpenChange={(details) => handleOpenChange(details.open)}
+      onOpenChange={
+        onOpenChange ? (details) => onOpenChange(details.open) : undefined
+      }
       positioning={{ placement, gutter }}
       {...props}
     />
