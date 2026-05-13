@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Dialog as ChakraDialog, Portal } from '@chakra-ui/react'
+import { Dialog as ChakraDialog, Portal, useDialogContext } from '@chakra-ui/react'
 import { XIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -67,8 +67,7 @@ function DialogOverlay({
       data-slot="dialog-overlay"
       className={cn(
         'fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]',
-        'data-[state=open]:animate-in data-[state=closed]:animate-out',
-        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+        'data-[state=open]:animate-in data-[state=open]:fade-in-0',
         className,
       )}
       {...props}
@@ -86,6 +85,13 @@ function DialogContent({
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof ChakraDialog.Content> & DialogContentExtraProps) {
+  // Conditionally render based on the live dialog state. Same rationale
+  // as DropdownMenuContent: presence + exit animation has repeatedly
+  // failed to dismiss when re-renders / state-machine races interrupt
+  // the close transition. Gating on `dialog.open` makes the close
+  // synchronous and unconditional.
+  const dialog = useDialogContext()
+  if (!dialog.open) return null
   return (
     <Portal>
       <DialogOverlay />
@@ -94,9 +100,7 @@ function DialogContent({
           data-slot="dialog-content"
           className={cn(
             'bg-background relative w-full max-w-[calc(100%-2rem)] rounded-lg border p-6 shadow-elevation-lg sm:max-w-lg overflow-hidden',
-            'data-[state=open]:animate-in data-[state=closed]:animate-out',
-            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-            'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             'duration-200',
             className,
           )}
