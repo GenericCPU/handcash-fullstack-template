@@ -21,7 +21,10 @@ import { cn } from '@/lib/utils'
 
 type ChakraMenuRootProps = React.ComponentProps<typeof ChakraMenu.Root>
 
-type RadixDropdownMenuProps = Omit<ChakraMenuRootProps, 'onOpenChange' | 'positioning'> & {
+type RadixDropdownMenuProps = Omit<
+  ChakraMenuRootProps,
+  'open' | 'defaultOpen' | 'onOpenChange' | 'positioning'
+> & {
   open?: boolean
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
@@ -43,15 +46,41 @@ type RadixDropdownMenuProps = Omit<ChakraMenuRootProps, 'onOpenChange' | 'positi
   gutter?: number
 }
 
+/**
+ * Always-controlled wrapper. We hold the truth in local state and pass it
+ * to Chakra/Ark as `open`. This makes the close path bulletproof: every
+ * trigger (item click, outside click, Escape, programmatic close) flows
+ * through `handleOpenChange` and we flip the prop synchronously, so the
+ * machine cannot get stuck in the "open" state because of a race between
+ * our items' click handlers and a parent re-render. Consumers that pass
+ * `open`/`defaultOpen` still work — we just mirror it.
+ */
 function DropdownMenu({
+  open: controlledOpen,
+  defaultOpen = false,
   onOpenChange,
   placement = 'bottom-start',
   gutter = 4,
   ...props
 }: RadixDropdownMenuProps) {
+  const isControlled = controlledOpen !== undefined
+  const [internalOpen, setInternalOpen] = React.useState<boolean>(
+    controlledOpen ?? defaultOpen,
+  )
+
+  React.useEffect(() => {
+    if (isControlled) setInternalOpen(controlledOpen)
+  }, [isControlled, controlledOpen])
+
+  const handleOpenChange = (next: boolean) => {
+    if (!isControlled) setInternalOpen(next)
+    onOpenChange?.(next)
+  }
+
   return (
     <ChakraMenu.Root
-      onOpenChange={onOpenChange ? (details) => onOpenChange(details.open) : undefined}
+      open={isControlled ? controlledOpen : internalOpen}
+      onOpenChange={(details) => handleOpenChange(details.open)}
       positioning={{ placement, gutter }}
       {...props}
     />
@@ -115,6 +144,8 @@ function DropdownMenuItem({
   inset,
   variant = 'default',
   value,
+  closeOnSelect = true,
+  onClick,
   ...props
 }: Omit<React.ComponentProps<typeof ChakraMenu.Item>, 'value' | 'onSelect'> &
   DropdownMenuItemExtraProps & {
@@ -122,25 +153,36 @@ function DropdownMenuItem({
   }) {
   const autoId = React.useId()
   return (
-    <ChakraMenu.Item
-      value={value ?? autoId}
-      data-slot="dropdown-menu-item"
-      data-inset={inset}
-      data-variant={variant}
-      className={cn(
-        'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
-        'data-[variant=destructive]:text-danger data-[variant=destructive]:data-[highlighted]:bg-danger/10',
-        'dark:data-[variant=destructive]:data-[highlighted]:bg-danger/20',
-        'data-[variant=destructive]:data-[highlighted]:text-danger',
-        'data-[variant=destructive]:*:[svg]:!text-danger',
-        "[&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none",
-        'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-        'data-[inset]:pl-8',
-        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className,
+    <ChakraMenu.Context>
+      {(menu) => (
+        <ChakraMenu.Item
+          value={value ?? autoId}
+          closeOnSelect={closeOnSelect}
+          data-slot="dropdown-menu-item"
+          data-inset={inset}
+          data-variant={variant}
+          className={cn(
+            'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
+            'data-[variant=destructive]:text-danger data-[variant=destructive]:data-[highlighted]:bg-danger/10',
+            'dark:data-[variant=destructive]:data-[highlighted]:bg-danger/20',
+            'data-[variant=destructive]:data-[highlighted]:text-danger',
+            'data-[variant=destructive]:*:[svg]:!text-danger',
+            "[&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none",
+            'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+            'data-[inset]:pl-8',
+            "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+            className,
+          )}
+          onClick={(event) => {
+            onClick?.(event)
+            if (!event.defaultPrevented && closeOnSelect !== false) {
+              queueMicrotask(() => menu.setOpen(false))
+            }
+          }}
+          {...props}
+        />
       )}
-      {...props}
-    />
+    </ChakraMenu.Context>
   )
 }
 
@@ -149,30 +191,43 @@ function DropdownMenuCheckboxItem({
   children,
   checked,
   onCheckedChange,
+  closeOnSelect = true,
+  onClick,
   ...props
 }: Omit<React.ComponentProps<typeof ChakraMenu.CheckboxItem>, 'onCheckedChange'> & {
   onCheckedChange?: (checked: boolean) => void
 }) {
   return (
-    <ChakraMenu.CheckboxItem
-      data-slot="dropdown-menu-checkbox-item"
-      checked={checked}
-      onCheckedChange={onCheckedChange}
-      className={cn(
-        'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none',
-        'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className,
+    <ChakraMenu.Context>
+      {(menu) => (
+        <ChakraMenu.CheckboxItem
+          data-slot="dropdown-menu-checkbox-item"
+          checked={checked}
+          closeOnSelect={closeOnSelect}
+          onCheckedChange={onCheckedChange}
+          className={cn(
+            'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none',
+            'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+            "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+            className,
+          )}
+          onClick={(event) => {
+            onClick?.(event)
+            if (!event.defaultPrevented && closeOnSelect !== false) {
+              queueMicrotask(() => menu.setOpen(false))
+            }
+          }}
+          {...props}
+        >
+          <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+            <ChakraMenu.ItemIndicator>
+              <CheckIcon className="size-4" />
+            </ChakraMenu.ItemIndicator>
+          </span>
+          {children}
+        </ChakraMenu.CheckboxItem>
       )}
-      {...props}
-    >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-        <ChakraMenu.ItemIndicator>
-          <CheckIcon className="size-4" />
-        </ChakraMenu.ItemIndicator>
-      </span>
-      {children}
-    </ChakraMenu.CheckboxItem>
+    </ChakraMenu.Context>
   )
 }
 
@@ -209,26 +264,39 @@ function DropdownMenuRadioGroup({
 function DropdownMenuRadioItem({
   className,
   children,
+  closeOnSelect = true,
+  onClick,
   ...props
 }: React.ComponentProps<typeof ChakraMenu.RadioItem>) {
   return (
-    <ChakraMenu.RadioItem
-      data-slot="dropdown-menu-radio-item"
-      className={cn(
-        'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none',
-        'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className,
+    <ChakraMenu.Context>
+      {(menu) => (
+        <ChakraMenu.RadioItem
+          data-slot="dropdown-menu-radio-item"
+          closeOnSelect={closeOnSelect}
+          className={cn(
+            'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none',
+            'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+            "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+            className,
+          )}
+          onClick={(event) => {
+            onClick?.(event)
+            if (!event.defaultPrevented && closeOnSelect !== false) {
+              queueMicrotask(() => menu.setOpen(false))
+            }
+          }}
+          {...props}
+        >
+          <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+            <ChakraMenu.ItemIndicator>
+              <CircleIcon className="size-2 fill-current" />
+            </ChakraMenu.ItemIndicator>
+          </span>
+          {children}
+        </ChakraMenu.RadioItem>
       )}
-      {...props}
-    >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-        <ChakraMenu.ItemIndicator>
-          <CircleIcon className="size-2 fill-current" />
-        </ChakraMenu.ItemIndicator>
-      </span>
-      {children}
-    </ChakraMenu.RadioItem>
+    </ChakraMenu.Context>
   )
 }
 
