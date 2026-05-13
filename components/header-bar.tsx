@@ -73,12 +73,12 @@ export function HeaderBar() {
                 </div>
               </Link>
 
-              <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 sm:gap-1 bg-gray-200/80 dark:bg-zinc-800/90 rounded-full p-0.5 sm:p-1">
+              <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 sm:gap-1 bg-gray-200/80 dark:bg-zinc-800/90 rounded-lg p-0.5 sm:p-1">
                 <Button
                   variant={isActive("/") ? "secondary" : "ghost"}
                   size="sm"
                   asChild
-                  className={`rounded-full h-8 sm:h-9 px-2.5 sm:px-4 text-xs sm:text-sm transition-all ${
+                  className={`rounded-md h-8 sm:h-9 px-2.5 sm:px-4 text-xs sm:text-sm transition-all ${
                     isActive("/")
                       ? "bg-gray-100 dark:bg-zinc-700 shadow-sm text-foreground hover:bg-gray-100 dark:hover:bg-zinc-700"
                       : "hover:bg-gray-100/90 dark:hover:bg-zinc-700/80 text-foreground"
@@ -96,7 +96,7 @@ export function HeaderBar() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="relative h-8 sm:h-10 gap-2 px-1.5 sm:px-2 focus-visible:ring-0 focus-visible:ring-offset-0 flex-row-reverse rounded-full hover:bg-muted/50"
+                    className="relative h-8 sm:h-10 gap-2 px-1.5 sm:px-2 focus-visible:ring-0 focus-visible:ring-offset-0 flex-row-reverse rounded-md hover:bg-muted/50"
                   >
                     <Avatar className="h-7 w-7 sm:h-8 sm:w-8 ring-2 ring-background">
                       <AvatarImage
