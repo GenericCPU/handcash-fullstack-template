@@ -35,15 +35,34 @@ anything in `components/ui/*` or any styled component.
 4. **Keep `data-slot`.** Every wrapper component sets `data-slot="..."` so
    product code can target it with Tailwind selectors and the previous
    shadcn-shaped CSS keeps working.
-5. **Always-controlled close.** Dialog and DropdownMenu wrappers hold their
-   own `internalOpen` mirror and route every close through one
-   `handleOpenChange`. Do not invent ad-hoc internal mirrors in consumers —
-   pass `open` / `onOpenChange` straight through and trust the wrapper.
+5. **Conditional-render dismissal.** Dialog, DropdownMenu, and Popover
+   wrappers pass `open` / `onOpenChange` straight through to Chakra. The
+   `*Content` components read `useDialogContext()` / `useMenuContext()` /
+   `usePopoverContext()` and `return null` when `open` is false — this
+   bypasses Chakra's presence machinery so React unmounts immediately and
+   we never get stuck dialogs, menus, or popovers. Inside menu items,
+   queue `menu.setOpen(false)` in a `queueMicrotask` after the consumer's
+   `onClick` as a belt-and-suspenders backstop for React 19 batching.
+   Consumers pass `open` / `onOpenChange` straight through and trust the
+   wrapper; do not reinvent internal mirrors.
 6. **No Chakra recipes for our visual styling.** If a recipe insists on a
    shape that fights Tailwind (e.g. Avatar's enforced size), drop down to
    `@ark-ui/react/<part>` directly inside the wrapper.
 7. **Forward `className` last.** Always merge with `cn()` and place the
    consumer's `className` at the end so it can override wrapper defaults.
+8. **Tark UI pattern for primitives Chakra v3 doesn't ship.** When Chakra
+   v3 doesn't expose a usable primitive (currently: Tour, Tags Input, Steps,
+   Editable, Number Input with stepper, Color Picker, Signature Pad,
+   Tree View), copy raw `@ark-ui/react/<part>` components styled with
+   Tailwind utilities into `components/ui/*` following the Tark UI reference
+   (<https://tarkui.com>, anubra266/tarkui — Ark UI + Tailwind copy-paste
+   registry). Raw-Ark wrappers MUST still: set `data-slot`, read tokens
+   via Tailwind aliases (no hardcoded hex), forward `className` last via
+   `cn()`, and match the shadcn/Radix-shaped API the rest of `components/ui`
+   exposes. Do NOT reimplement a Chakra v3-wrapped primitive in raw Ark
+   just because Tark UI ships one — Chakra wrappers (Dialog, Menu, Select,
+   Combobox, Tooltip, Tabs, Accordion, Popover, Switch, Checkbox, Radio
+   Group, Slider, Toast, Avatar) stay canon.
 
 ## Anti-patterns and fixes
 
@@ -84,6 +103,22 @@ const collection = createListCollection({
   itemToValue: (i) => i.id,
   itemToString: (i) => i.label,
 })
+```
+
+```tsx
+// BAD — reimplement an already-wrapped Chakra primitive in raw Ark
+// just to ape Tark UI. Two layers, two bug surfaces, zero benefit.
+import { Dialog as ArkDialog } from "@ark-ui/react/dialog"
+export function Dialog(props) { return <ArkDialog.Root {...props} /> }
+
+// GOOD — paste raw Ark + Tailwind only for primitives Chakra v3
+// doesn't ship (Tour, Tags Input, Steps, Editable, Number Input, ...)
+import { Steps } from "@ark-ui/react/steps"
+export function Steps({ className, ...props }: StepsProps) {
+  return (
+    <Steps.Root data-slot="steps" className={cn("...", className)} {...props} />
+  )
+}
 ```
 
 ## When in doubt

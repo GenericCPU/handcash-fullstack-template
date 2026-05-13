@@ -66,7 +66,7 @@ function DialogOverlay({
     <ChakraDialog.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        'fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]',
+        'fixed inset-0 z-50 bg-black/40',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0',
         className,
       )}
@@ -99,9 +99,8 @@ function DialogContent({
         <ChakraDialog.Content
           data-slot="dialog-content"
           className={cn(
-            'bg-background relative w-full max-w-[calc(100%-2rem)] rounded-lg border p-6 shadow-elevation-lg sm:max-w-lg overflow-hidden',
-            'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
-            'duration-200',
+            'bg-background relative w-full max-w-[calc(100%-2rem)] overflow-hidden rounded-2xl border border-border p-5 shadow-lg sm:max-w-lg sm:p-6',
+            'data-[state=open]:animate-in data-[state=open]:fade-in-0',
             className,
           )}
           {...props}
@@ -110,7 +109,7 @@ function DialogContent({
           {showCloseButton && (
             <ChakraDialog.CloseTrigger
               data-slot="dialog-close"
-              className="ring-offset-background focus:ring-ring absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+              className="absolute top-4 right-4 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4"
             >
               <XIcon />
               <span className="sr-only">Close</span>

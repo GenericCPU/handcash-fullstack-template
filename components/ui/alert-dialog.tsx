@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Dialog as ChakraDialog, Portal } from '@chakra-ui/react'
+import { Dialog as ChakraDialog, Portal, useDialogContext } from '@chakra-ui/react'
 
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -50,9 +50,8 @@ function AlertDialogOverlay({
     <ChakraDialog.Backdrop
       data-slot="alert-dialog-overlay"
       className={cn(
-        'fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]',
-        'data-[state=open]:animate-in data-[state=closed]:animate-out',
-        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+        'fixed inset-0 z-50 bg-black/40',
+        'data-[state=open]:animate-in data-[state=open]:fade-in-0',
         className,
       )}
       {...props}
@@ -65,6 +64,8 @@ function AlertDialogContent({
   children,
   ...props
 }: React.ComponentProps<typeof ChakraDialog.Content>) {
+  const dialog = useDialogContext()
+  if (!dialog.open) return null
   return (
     <Portal>
       <AlertDialogOverlay />
@@ -72,11 +73,8 @@ function AlertDialogContent({
         <ChakraDialog.Content
           data-slot="alert-dialog-content"
           className={cn(
-            'bg-background grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-lg border p-6 shadow-elevation-lg sm:max-w-lg',
-            'data-[state=open]:animate-in data-[state=closed]:animate-out',
-            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-            'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-            'duration-200',
+            'bg-background grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl border border-border p-5 shadow-lg sm:max-w-lg sm:p-6',
+            'data-[state=open]:animate-in data-[state=open]:fade-in-0',
             className,
           )}
           {...props}

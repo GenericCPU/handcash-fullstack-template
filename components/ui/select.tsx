@@ -277,7 +277,10 @@ function SelectItem({
       )}
       {...props}
     >
-      <ChakraSelect.ItemText>{children}</ChakraSelect.ItemText>
+      {/* Keep icon + label children horizontal inside ItemText. */}
+      <ChakraSelect.ItemText>
+        <span className="flex items-center gap-2">{children}</span>
+      </ChakraSelect.ItemText>
       <span className="absolute right-2 flex size-3.5 items-center justify-center">
         <ChakraSelect.ItemIndicator>
           <CheckIcon className="size-4" />
