@@ -1,42 +1,58 @@
 'use client'
 
 import * as React from 'react'
-import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog'
+import { Dialog as ChakraDialog, Portal } from '@chakra-ui/react'
 
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 
-function AlertDialog({
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
-  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
+/**
+ * HandCash Template AlertDialog — Chakra v3 Dialog in `role="alertdialog"` mode.
+ *
+ * AlertDialogs differ from Dialogs by:
+ *   - Using `role="alertdialog"` for assistive tech
+ *   - Disabling close-on-outside-click and (by default) close-on-escape
+ *   - Requiring an explicit Action/Cancel rather than a close button X
+ *
+ * Consumer API preserved from the previous Radix wrapper.
+ */
+
+type ChakraDialogRootProps = React.ComponentProps<typeof ChakraDialog.Root>
+
+type RadixAlertDialogProps = Omit<ChakraDialogRootProps, 'onOpenChange' | 'role'> & {
+  onOpenChange?: (open: boolean) => void
 }
 
-function AlertDialogTrigger({
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>) {
+function AlertDialog({ onOpenChange, ...props }: RadixAlertDialogProps) {
   return (
-    <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
+    <ChakraDialog.Root
+      role="alertdialog"
+      closeOnInteractOutside={false}
+      onOpenChange={onOpenChange ? (details) => onOpenChange(details.open) : undefined}
+      {...props}
+    />
   )
 }
 
-function AlertDialogPortal({
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
-  return (
-    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
-  )
+function AlertDialogTrigger(props: React.ComponentProps<typeof ChakraDialog.Trigger>) {
+  return <ChakraDialog.Trigger data-slot="alert-dialog-trigger" {...props} />
+}
+
+function AlertDialogPortal({ children }: { children?: React.ReactNode }) {
+  return <Portal>{children}</Portal>
 }
 
 function AlertDialogOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+}: React.ComponentProps<typeof ChakraDialog.Backdrop>) {
   return (
-    <AlertDialogPrimitive.Overlay
+    <ChakraDialog.Backdrop
       data-slot="alert-dialog-overlay"
       className={cn(
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50',
+        'fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]',
+        'data-[state=open]:animate-in data-[state=closed]:animate-out',
+        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         className,
       )}
       {...props}
@@ -46,27 +62,33 @@ function AlertDialogOverlay({
 
 function AlertDialogContent({
   className,
+  children,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+}: React.ComponentProps<typeof ChakraDialog.Content>) {
   return (
-    <AlertDialogPortal>
+    <Portal>
       <AlertDialogOverlay />
-      <AlertDialogPrimitive.Content
-        data-slot="alert-dialog-content"
-        className={cn(
-          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
-          className,
-        )}
-        {...props}
-      />
-    </AlertDialogPortal>
+      <ChakraDialog.Positioner className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <ChakraDialog.Content
+          data-slot="alert-dialog-content"
+          className={cn(
+            'bg-background grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-lg border p-6 shadow-elevation-lg sm:max-w-lg',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out',
+            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            'duration-200',
+            className,
+          )}
+          {...props}
+        >
+          {children}
+        </ChakraDialog.Content>
+      </ChakraDialog.Positioner>
+    </Portal>
   )
 }
 
-function AlertDialogHeader({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) {
+function AlertDialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="alert-dialog-header"
@@ -76,17 +98,11 @@ function AlertDialogHeader({
   )
 }
 
-function AlertDialogFooter({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) {
+function AlertDialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="alert-dialog-footer"
-      className={cn(
-        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
-        className,
-      )}
+      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
       {...props}
     />
   )
@@ -95,9 +111,9 @@ function AlertDialogFooter({
 function AlertDialogTitle({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+}: React.ComponentProps<typeof ChakraDialog.Title>) {
   return (
-    <AlertDialogPrimitive.Title
+    <ChakraDialog.Title
       data-slot="alert-dialog-title"
       className={cn('text-lg font-semibold', className)}
       {...props}
@@ -108,9 +124,9 @@ function AlertDialogTitle({
 function AlertDialogDescription({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+}: React.ComponentProps<typeof ChakraDialog.Description>) {
   return (
-    <AlertDialogPrimitive.Description
+    <ChakraDialog.Description
       data-slot="alert-dialog-description"
       className={cn('text-muted-foreground text-sm', className)}
       {...props}
@@ -121,9 +137,10 @@ function AlertDialogDescription({
 function AlertDialogAction({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+}: React.ComponentProps<typeof ChakraDialog.CloseTrigger>) {
   return (
-    <AlertDialogPrimitive.Action
+    <ChakraDialog.CloseTrigger
+      data-slot="alert-dialog-action"
       className={cn(buttonVariants(), className)}
       {...props}
     />
@@ -133,9 +150,10 @@ function AlertDialogAction({
 function AlertDialogCancel({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
+}: React.ComponentProps<typeof ChakraDialog.CloseTrigger>) {
   return (
-    <AlertDialogPrimitive.Cancel
+    <ChakraDialog.CloseTrigger
+      data-slot="alert-dialog-cancel"
       className={cn(buttonVariants({ variant: 'outline' }), className)}
       {...props}
     />

@@ -1,8 +1,23 @@
+'use client'
+
 import * as React from 'react'
-import { Slot } from '@radix-ui/react-slot'
+import { Button as ChakraButton } from '@chakra-ui/react'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
+
+/**
+ * HandCash Template Button — Chakra v3 Button behind a shadcn-shaped boundary.
+ *
+ *   <Button>Default</Button>
+ *   <Button variant="destructive" size="sm" />
+ *   <Button asChild><Link href="/x">Link</Link></Button>
+ *
+ * Existing variant/size props map to Chakra's variant + colorPalette + size.
+ * `buttonVariants` (CVA) is exported for backward compatibility with any
+ * other component that uses the classes directly (AlertDialog Action/Cancel,
+ * link-styled anchors, etc.).
+ */
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
@@ -29,32 +44,68 @@ const buttonVariants = cva(
         'icon-lg': 'size-10',
       },
     },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
+    defaultVariants: { variant: 'default', size: 'default' },
   },
 )
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<'button'> &
+type LegacyVariant = NonNullable<VariantProps<typeof buttonVariants>['variant']>
+type LegacySize = NonNullable<VariantProps<typeof buttonVariants>['size']>
+
+type ChakraVariant = 'solid' | 'outline' | 'ghost' | 'subtle' | 'plain' | 'surface'
+type ChakraSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+
+const VARIANT_TO_CHAKRA: Record<
+  LegacyVariant,
+  { variant: ChakraVariant; colorPalette?: string; extraClass?: string }
+> = {
+  default: { variant: 'solid', colorPalette: 'primary' },
+  destructive: { variant: 'solid', colorPalette: 'danger' },
+  outline: { variant: 'outline' },
+  secondary: { variant: 'subtle', colorPalette: 'gray' },
+  ghost: { variant: 'ghost' },
+  link: {
+    variant: 'plain',
+    extraClass: 'underline-offset-4 hover:underline px-0 h-auto text-primary',
+  },
+}
+
+const SIZE_TO_CHAKRA: Record<LegacySize, { size: ChakraSize; extraClass?: string }> = {
+  default: { size: 'md' },
+  sm: { size: 'sm' },
+  lg: { size: 'lg' },
+  icon: { size: 'md', extraClass: 'aspect-square px-0' },
+  'icon-sm': { size: 'sm', extraClass: 'aspect-square px-0' },
+  'icon-lg': { size: 'lg', extraClass: 'aspect-square px-0' },
+}
+
+type ChakraButtonProps = React.ComponentProps<typeof ChakraButton>
+
+export type ButtonProps = Omit<ChakraButtonProps, 'variant' | 'size'> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot : 'button'
+  }
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { className, variant, size, asChild, colorPalette, ...props },
+  ref,
+) {
+  const v = (variant ?? 'default') as LegacyVariant
+  const s = (size ?? 'default') as LegacySize
+  const variantMap = VARIANT_TO_CHAKRA[v] ?? VARIANT_TO_CHAKRA.default
+  const sizeMap = SIZE_TO_CHAKRA[s] ?? SIZE_TO_CHAKRA.default
 
   return (
-    <Comp
+    <ChakraButton
+      ref={ref}
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      variant={variantMap.variant}
+      colorPalette={colorPalette ?? variantMap.colorPalette}
+      size={sizeMap.size}
+      asChild={asChild}
+      className={cn(variantMap.extraClass, sizeMap.extraClass, className)}
       {...props}
     />
   )
-}
+})
 
 export { Button, buttonVariants }

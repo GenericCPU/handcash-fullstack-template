@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, Package, RefreshCw, Send, Eye, ChevronDown, ChevronUp, Flame } from "lucide-react"
 import { InventoryGridSkeleton } from "@/components/skeletons/app-skeletons"
 import { Badge } from "@/components/ui/badge"
-import { toast } from "sonner"
+import { toast } from "@/components/ui/sonner"
 import { ItemTransferDialog } from "@/components/widgets/item-transfer-dialog"
 import { ItemInspectDialog } from "@/components/widgets/item-inspect-dialog"
 import {

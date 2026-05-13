@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/lib/auth-context"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ChakraUIProvider } from "@/components/providers/chakra-provider"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
@@ -47,11 +48,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased bg-background text-foreground" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
-          <AuthProvider>
-            {children}
-            <Analytics />
-            <Toaster />
-          </AuthProvider>
+          <ChakraUIProvider>
+            <AuthProvider>
+              {children}
+              <Analytics />
+              <Toaster />
+            </AuthProvider>
+          </ChakraUIProvider>
         </ThemeProvider>
       </body>
     </html>

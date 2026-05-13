@@ -9,6 +9,8 @@
     "start": "next start"
   },
   "dependencies": {
+    "@chakra-ui/react": "^3.35.0",
+    "@emotion/react": "^11.14.0",
     "@handcash/handcash-connect": "0.8.11",
     "@handcash/mpp": "file:../../handcash/handcash-mpp",
     "@handcash/sdk": "1.0.3",

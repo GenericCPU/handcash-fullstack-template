@@ -1,44 +1,66 @@
 'use client'
 
 import * as React from 'react'
-import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { Dialog as ChakraDialog, Portal } from '@chakra-ui/react'
 import { XIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
-function Dialog({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+/**
+ * HandCash Template Dialog — Chakra v3 Dialog behind a Radix-shaped boundary.
+ *
+ * Consumer-facing props mirror the previous Radix/Ark wrapper:
+ *   <Dialog open={open} onOpenChange={setOpen}>
+ *     <DialogTrigger>...</DialogTrigger>
+ *     <DialogContent>
+ *       <DialogHeader>...</DialogHeader>
+ *       <DialogTitle>...</DialogTitle>
+ *       <DialogDescription>...</DialogDescription>
+ *     </DialogContent>
+ *   </Dialog>
+ *
+ * `onOpenChange` is translated to Chakra's `(details: { open: boolean })`
+ * shape; `DialogContent` auto-mounts Portal + Backdrop + Positioner.
+ */
+
+type ChakraDialogRootProps = React.ComponentProps<typeof ChakraDialog.Root>
+
+type RadixDialogProps = Omit<ChakraDialogRootProps, 'onOpenChange'> & {
+  onOpenChange?: (open: boolean) => void
 }
 
-function DialogTrigger({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+function Dialog({ onOpenChange, ...props }: RadixDialogProps) {
+  return (
+    <ChakraDialog.Root
+      onOpenChange={onOpenChange ? (details) => onOpenChange(details.open) : undefined}
+      {...props}
+    />
+  )
 }
 
-function DialogPortal({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Portal>) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
+function DialogTrigger(props: React.ComponentProps<typeof ChakraDialog.Trigger>) {
+  return <ChakraDialog.Trigger data-slot="dialog-trigger" {...props} />
 }
 
-function DialogClose({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Close>) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
+function DialogPortal({ children }: { children?: React.ReactNode }) {
+  return <Portal>{children}</Portal>
+}
+
+function DialogClose(props: React.ComponentProps<typeof ChakraDialog.CloseTrigger>) {
+  return <ChakraDialog.CloseTrigger data-slot="dialog-close" {...props} />
 }
 
 function DialogOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+}: React.ComponentProps<typeof ChakraDialog.Backdrop>) {
   return (
-    <DialogPrimitive.Overlay
+    <ChakraDialog.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50',
+        'fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]',
+        'data-[state=open]:animate-in data-[state=closed]:animate-out',
+        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         className,
       )}
       {...props}
@@ -46,37 +68,45 @@ function DialogOverlay({
   )
 }
 
+type DialogContentExtraProps = {
+  showCloseButton?: boolean
+}
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
-  showCloseButton?: boolean
-}) {
+}: React.ComponentProps<typeof ChakraDialog.Content> & DialogContentExtraProps) {
   return (
-    <DialogPortal data-slot="dialog-portal">
+    <Portal>
       <DialogOverlay />
-      <DialogPrimitive.Content
-        data-slot="dialog-content"
-        className={cn(
-          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg overflow-hidden',
-          className,
-        )}
-        {...props}
-      >
-        {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-          >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
-      </DialogPrimitive.Content>
-    </DialogPortal>
+      <ChakraDialog.Positioner className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <ChakraDialog.Content
+          data-slot="dialog-content"
+          className={cn(
+            'bg-background relative w-full max-w-[calc(100%-2rem)] rounded-lg border p-6 shadow-elevation-lg sm:max-w-lg overflow-hidden',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out',
+            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            'duration-200',
+            className,
+          )}
+          {...props}
+        >
+          {children}
+          {showCloseButton && (
+            <ChakraDialog.CloseTrigger
+              data-slot="dialog-close"
+              className="ring-offset-background focus:ring-ring absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            >
+              <XIcon />
+              <span className="sr-only">Close</span>
+            </ChakraDialog.CloseTrigger>
+          )}
+        </ChakraDialog.Content>
+      </ChakraDialog.Positioner>
+    </Portal>
   )
 }
 
@@ -94,21 +124,15 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-footer"
-      className={cn(
-        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
-        className,
-      )}
+      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
       {...props}
     />
   )
 }
 
-function DialogTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Title>) {
+function DialogTitle({ className, ...props }: React.ComponentProps<typeof ChakraDialog.Title>) {
   return (
-    <DialogPrimitive.Title
+    <ChakraDialog.Title
       data-slot="dialog-title"
       className={cn('text-lg leading-none font-semibold break-words', className)}
       {...props}
@@ -119,9 +143,9 @@ function DialogTitle({
 function DialogDescription({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+}: React.ComponentProps<typeof ChakraDialog.Description>) {
   return (
-    <DialogPrimitive.Description
+    <ChakraDialog.Description
       data-slot="dialog-description"
       className={cn('text-muted-foreground text-sm break-words', className)}
       {...props}

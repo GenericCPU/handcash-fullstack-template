@@ -8,7 +8,7 @@ import { InventoryGridSkeleton } from "@/components/skeletons/app-skeletons"
 import { Badge } from "@/components/ui/badge"
 import { ItemTransferDialog } from "@/components/widgets/item-transfer-dialog"
 import { ItemInspectDialog } from "@/components/widgets/item-inspect-dialog"
-import { toast } from "sonner"
+import { toast } from "@/components/ui/sonner"
 import {
   AlertDialog,
   AlertDialogAction,
