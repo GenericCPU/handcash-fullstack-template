@@ -60,8 +60,10 @@ export function DualLoginButtons({ compact = false, showDivider = true }: DualLo
     return (
       <div className="flex flex-col gap-2 w-full max-w-[260px]">
         <Button
+          type="button"
+          variant="outline"
           onClick={handleGoogleLogin}
-          className="h-10 px-4 text-sm font-medium rounded-md bg-white hover:bg-gray-50 text-[#3c4043] border border-[#dadce0] w-full shadow-sm hover:shadow transition-shadow"
+          className="h-10 px-4 text-sm font-medium rounded-md w-full shadow-sm transition-shadow !border-[#dadce0] !bg-white !text-[#3c4043] hover:!bg-zinc-50 hover:!border-[#dadce0] hover:shadow dark:!bg-white dark:!text-[#3c4043] dark:hover:!bg-zinc-100 dark:!border-[#dadce0]"
           disabled={isLoading}
         >
           {isGoogleLoading ? (
@@ -78,8 +80,10 @@ export function DualLoginButtons({ compact = false, showDivider = true }: DualLo
         </Button>
 
         <Button
+          type="button"
+          variant="secondary"
           onClick={handleHandCashLogin}
-          className="h-10 px-4 text-sm font-medium rounded-md bg-black hover:bg-black/90 text-white w-full"
+          className="h-10 px-4 text-sm font-medium rounded-md w-full shadow-sm !border-zinc-600 !bg-zinc-600 !text-white hover:!bg-zinc-500 hover:!border-zinc-500 dark:!border-zinc-600 dark:!bg-zinc-600 dark:hover:!bg-zinc-500"
           disabled={isLoading}
         >
           {isHandCashLoading ? (
@@ -98,8 +102,10 @@ export function DualLoginButtons({ compact = false, showDivider = true }: DualLo
   return (
     <div className="flex flex-col gap-4 w-full max-w-[340px]">
       <Button
+        type="button"
+        variant="outline"
         onClick={handleGoogleLogin}
-        className="h-12 px-6 text-base font-medium rounded-lg bg-white hover:bg-gray-50 text-[#3c4043] border border-[#dadce0] w-full shadow-sm hover:shadow-md transition-all"
+        className="h-12 px-6 text-base font-medium rounded-lg w-full shadow-sm transition-all !border-[#dadce0] !bg-white !text-[#3c4043] hover:!bg-zinc-50 hover:!border-[#dadce0] hover:shadow-md dark:!bg-white dark:!text-[#3c4043] dark:hover:!bg-zinc-100 dark:!border-[#dadce0]"
         disabled={isLoading}
       >
         {isGoogleLoading ? (
@@ -124,8 +130,10 @@ export function DualLoginButtons({ compact = false, showDivider = true }: DualLo
       )}
 
       <Button
+        type="button"
+        variant="secondary"
         onClick={handleHandCashLogin}
-        className="h-12 px-6 text-base font-semibold rounded-lg bg-black hover:bg-black/90 text-white w-full transition-all"
+        className="h-12 px-6 text-base font-semibold rounded-lg w-full shadow-sm transition-all !border-zinc-600 !bg-zinc-600 !text-white hover:!bg-zinc-500 hover:!border-zinc-500 dark:!border-zinc-600 dark:!bg-zinc-600 dark:hover:!bg-zinc-500"
         disabled={isLoading}
       >
         {isHandCashLoading ? (
